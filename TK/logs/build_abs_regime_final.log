@@ -1,9 +1,0 @@
-ABS expert seed=4242 done in 28.7s
-ABS expert seed=5151 done in 29.3s
-v11 2024 natural=0.48732353 target=0.47475110 shift=-0.05087341
-saved ./open/baseline_submit/model/bundle_v11_abs_candidate.pkl (52.5 MB)
-
-benchmark rows=245789 features=151 members=11 catboost=2 command=2 abs_regime=2
-feature_seconds=0.87
-predict_seconds=106.78
-total_seconds=107.66

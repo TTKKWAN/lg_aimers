@@ -1,0 +1,27 @@
+# Codex 프로젝트 지침 — LG Aimers KBO 제구 성공 확률 예측
+
+## 시작 순서
+
+1. 작업 전에 `CLAUDE.md`를 처음부터 읽는다.
+2. 코드 변경이면 `ARCHITECTURE.md`, 모델링 판단이면 `METHOD.md`를 읽는다.
+3. 현재 방식은 v12 투수별 chase policy이며 루트 `submit.zip`과
+   `open/baseline_submit/model/bundle.pkl`이 현재 산출물이다.
+
+## 실행 안전 규약
+
+- 사용자가 해당 요청에서 명시적으로 로컬 실행을 요청하지 않는 한 모델 학습,
+  재학습, 교차검증, 대규모 추론을 로컬에서 실행하지 않는다.
+- 학습이 필요하면 Google Colab에서 바로 실행할 완결된 명령과 입출력 경로를 제공한다.
+- 로컬에서는 문법 검사, 정적 분석, ZIP 구조 검사처럼 모델을 fit하지 않는 가벼운
+  검증만 수행한다.
+
+## 변경 계약
+
+- 새 피처는 평가 행 하나와 학습 데이터에서 미리 고정한 상수만으로 계산해야 한다.
+- `scripts/pipeline.py`와 `open/baseline_submit/script.py`의 피처 생성·컬럼 순서를
+  함께 갱신한다.
+- 변경 후 제출 경로 검사를 통과시킨다. 학습이 필요한 검사는 Colab 명령으로 제공한다.
+- 스크립트는 저장소 루트에서 `python3 scripts/<name>.py`로 실행한다.
+- 제출 ZIP 최상위에는 `model/`, `script.py`, `requirements.txt`만 둔다.
+
+대회 사실과 현재 모델에 대해서는 `CLAUDE.md`를 우선한다.

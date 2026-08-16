@@ -1,5 +1,0 @@
-rows=245789 features=107 members=11
-feature_seconds=0.14
-predict_seconds=40.09
-total_seconds=40.23
-pred_min=0.36997670 pred_max=0.51448312 pred_mean=0.44799196
