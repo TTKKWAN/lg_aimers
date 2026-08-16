@@ -1,0 +1,62 @@
+
+[fold=2022] active ablations=['drop_raw_rates', 'drop_redundant_state', 'drop_calendar', 'drop_team_cats', 'drop_game_type', 'drop_season', 'drop_win_context']
+0:	learn: 0.2494587	total: 276ms	remaining: 1m 36s
+100:	learn: 0.2431617	total: 23.1s	remaining: 56.9s
+200:	learn: 0.2425331	total: 46.4s	remaining: 34.4s
+300:	learn: 0.2419910	total: 1m 10s	remaining: 11.5s
+349:	learn: 0.2417039	total: 1m 22s	remaining: 0us
+  CatBoost seed=2026 fit+predict 85s
+  drop_raw_rates         features=108 gain=   -0.77 SE=3.78
+0:	learn: 0.2494701	total: 296ms	remaining: 1m 43s
+100:	learn: 0.2431514	total: 26.1s	remaining: 1m 4s
+200:	learn: 0.2425226	total: 53.3s	remaining: 39.5s
+300:	learn: 0.2419459	total: 1m 19s	remaining: 13s
+349:	learn: 0.2416576	total: 1m 32s	remaining: 0us
+  CatBoost seed=2026 fit+predict 96s
+  drop_redundant_state   features=116 gain=   -2.01 SE=3.62
+0:	learn: 0.2494614	total: 238ms	remaining: 1m 22s
+100:	learn: 0.2431904	total: 27.8s	remaining: 1m 8s
+200:	learn: 0.2425720	total: 54.7s	remaining: 40.5s
+300:	learn: 0.2420297	total: 1m 21s	remaining: 13.3s
+349:	learn: 0.2417555	total: 1m 35s	remaining: 0us
+  CatBoost seed=2026 fit+predict 98s
+  drop_calendar          features=122 gain=  -10.60 SE=3.84
+0:	learn: 0.2494750	total: 232ms	remaining: 1m 21s
+100:	learn: 0.2432752	total: 27.7s	remaining: 1m 8s
+200:	learn: 0.2426561	total: 55.7s	remaining: 41.3s
+300:	learn: 0.2421049	total: 1m 24s	remaining: 13.7s
+349:	learn: 0.2418282	total: 1m 38s	remaining: 0us
+  CatBoost seed=2026 fit+predict 101s
+  drop_team_cats         features=122 gain=   -7.24 SE=3.84
+0:	learn: 0.2495453	total: 232ms	remaining: 1m 20s
+100:	learn: 0.2435577	total: 28.5s	remaining: 1m 10s
+200:	learn: 0.2429064	total: 56.4s	remaining: 41.8s
+300:	learn: 0.2423467	total: 1m 25s	remaining: 13.9s
+349:	learn: 0.2420372	total: 1m 39s	remaining: 0us
+  CatBoost seed=2026 fit+predict 103s
+  drop_game_type         features=123 gain=  -39.50 SE=5.49
+0:	learn: 0.2494699	total: 239ms	remaining: 1m 23s
+100:	learn: 0.2432328	total: 29.1s	remaining: 1m 11s
+200:	learn: 0.2425963	total: 58s	remaining: 43s
+300:	learn: 0.2420603	total: 1m 27s	remaining: 14.2s
+349:	learn: 0.2417830	total: 1m 41s	remaining: 0us
+  CatBoost seed=2026 fit+predict 104s
+  drop_season            features=123 gain=  -17.65 SE=4.11
+0:	learn: 0.2494748	total: 245ms	remaining: 1m 25s
+100:	learn: 0.2431592	total: 29s	remaining: 1m 11s
+200:	learn: 0.2425394	total: 57.8s	remaining: 42.8s
+300:	learn: 0.2419990	total: 1m 26s	remaining: 14.1s
+349:	learn: 0.2417216	total: 1m 40s	remaining: 0us
+  CatBoost seed=2026 fit+predict 104s
+  drop_win_context       features=121 gain=   -4.59 SE=3.65
+  survivors -> ['drop_raw_rates', 'drop_redundant_state']
+Traceback (most recent call last):
+  File "/Users/taekwan/Desktop/lgaimers/scripts/diag_catboost_ablation.py", line 143, in <module>
+    main()
+  File "/Users/taekwan/Desktop/lgaimers/scripts/diag_catboost_ablation.py", line 83, in main
+    with np.load(f"{PRED_DIR}/catboost_command_profile_{val_season}.npz") as z:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/taekwan/Desktop/lgaimers/.venv/lib/python3.11/site-packages/numpy/lib/npyio.py", line 434, in load
+    magic = fid.read(N)
+            ^^^^^^^^^^^
+TimeoutError: [Errno 60] Operation timed out

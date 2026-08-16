@@ -1,0 +1,25 @@
+설정: k=50 te=False hgb_members=8 lgbm_members=3 recenter_f=0.5 era_lgbm=False context_members=0 context_weight=0.00 season_success=True
+시즌별 정답률:
+season
+2019    0.5647
+2020    0.5327
+2021    0.5328
+2022    0.5289
+2023    0.5000
+2024    0.4861
+2025 외삽 정답률 = 0.4622 (최근 3시즌 직선 적합, 기울기 -0.0214/년)
+학습 행렬: (1475092, 107)  union=107 hgb=91 lgbm=107 context=0
+  [hgb] member 1/8 학습 완료 n_iter=977 (142s)
+  [hgb] member 2/8 학습 완료 n_iter=1190 (126s)
+  [hgb] member 3/8 학습 완료 n_iter=1342 (223s)
+  [hgb] member 4/8 학습 완료 n_iter=759 (111s)
+  [hgb] member 5/8 학습 완료 n_iter=741 (134s)
+  [hgb] member 6/8 학습 완료 n_iter=542 (80s)
+  [hgb] member 7/8 학습 완료 n_iter=888 (141s)
+  [hgb] member 8/8 학습 완료 n_iter=1236 (159s)
+  [lgbm] member 1/3 학습 완료 (45s)
+  [lgbm] member 2/3 학습 완료 (32s)
+  [lgbm] member 3/3 학습 완료 (57s)
+마지막 학습 시즌(2024) 평균 예측=0.4871 (실제 0.4861)
+재중심화: 0.4871 -> 0.4747 (외삽 0.4622 의 50% 지점)  logit_shift=-0.05056
+저장 완료: ./open/baseline_submit/model/bundle.pkl  (37.0MB)

@@ -1,0 +1,44 @@
+
+[fold=2022] pitchers=560 batters=583 known_val=84.261%/88.977%
+  rank= 8 shrink= 10.0 explained=0.112
+  rank= 8 shrink= 30.0 explained=0.133
+  rank= 8 shrink=100.0 explained=0.162
+  rank=16 shrink= 10.0 explained=0.196
+  rank=16 shrink= 30.0 explained=0.225
+  rank=16 shrink=100.0 explained=0.266
+  rank=32 shrink= 10.0 explained=0.335
+  rank=32 shrink= 30.0 explained=0.375
+  rank=32 shrink=100.0 explained=0.428
+
+[fold=2023] pitchers=648 batters=671 known_val=86.202%/90.595%
+  rank= 8 shrink= 10.0 explained=0.109
+  rank= 8 shrink= 30.0 explained=0.129
+  rank= 8 shrink=100.0 explained=0.158
+  rank=16 shrink= 10.0 explained=0.184
+  rank=16 shrink= 30.0 explained=0.213
+  rank=16 shrink=100.0 explained=0.255
+  rank=32 shrink= 10.0 explained=0.313
+  rank=32 shrink= 30.0 explained=0.352
+  rank=32 shrink=100.0 explained=0.407
+
+[fold=2024] pitchers=711 batters=742 known_val=80.139%/90.695%
+  rank= 8 shrink= 10.0 explained=0.101
+  rank= 8 shrink= 30.0 explained=0.121
+  rank= 8 shrink=100.0 explained=0.151
+  rank=16 shrink= 10.0 explained=0.172
+  rank=16 shrink= 30.0 explained=0.199
+  rank=16 shrink=100.0 explained=0.242
+  rank=32 shrink= 10.0 explained=0.292
+  rank=32 shrink= 30.0 explained=0.331
+  rank=32 shrink=100.0 explained=0.387
+
+SUMMARY factorization blend vs stage2 all4-50
+r= 8 s= 10.0 w=0.10 gain=-20.44/+137.49/-13.84 mean=+34.40 SE=3.75/4.01/2.97
+r= 8 s= 30.0 w=0.10 gain=-22.41/+143.05/-14.00 mean=+35.55 SE=3.69/3.96/2.83
+r= 8 s=100.0 w=0.10 gain=-23.77/+147.26/-13.79 mean=+36.57 SE=3.69/3.98/2.78
+r=16 s= 10.0 w=0.10 gain=-23.72/+134.66/-15.13 mean=+31.94 SE=3.95/4.18/3.17
+r=16 s= 30.0 w=0.10 gain=-24.35/+141.64/-13.77 mean=+34.51 SE=3.76/4.04/2.91
+r=16 s=100.0 w=0.10 gain=-24.45/+146.54/-13.79 mean=+36.10 SE=3.70/3.99/2.80
+r=32 s= 10.0 w=0.10 gain=-26.39/+128.58/-19.98 mean=+27.41 SE=4.26/4.48/3.49
+r=32 s= 30.0 w=0.10 gain=-24.56/+138.93/-16.66 mean=+32.57 SE=3.89/4.14/3.03
+r=32 s=100.0 w=0.10 gain=-24.67/+145.21/-14.07 mean=+35.49 SE=3.71/4.01/2.82

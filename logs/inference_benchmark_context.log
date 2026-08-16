@@ -1,0 +1,12 @@
+2026-08-09 v6 context20 clean-room benchmark
+rows=245789
+input_columns=48
+feature_union=102
+base_members=11
+context_members=3
+context_weight=0.20
+output_rows=245789
+real_seconds=47.09
+user_seconds=304.27
+sys_seconds=38.65
+result=PASS

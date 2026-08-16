@@ -1,0 +1,44 @@
+
+[screen_compare] fold=2022
+    classifier v4 5+3      brier=0.24351478 BSS= 2267.12 reliability=0.00002204 resolution=0.00553884 ECE=0.003995
+    single direct LGBM     brier=0.24377791 BSS= 2161.51 reliability=0.00006500 resolution=0.00534620 ECE=0.006516
+    direct-v4 diff=-105.61 (SE=12.47)
+    mix cls/reg 0.75/0.25  brier=0.24353410 BSS= 2259.36 reliability=0.00003293 resolution=0.00553641 ECE=0.004501
+      mix-v4 diff=-7.75 (SE=3.12)
+    mix cls/reg 0.50/0.50  brier=0.24358440 BSS= 2239.18 reliability=0.00003522 resolution=0.00548716 ECE=0.005087
+      mix-v4 diff=-27.94 (SE=6.23)
+    mix cls/reg 0.25/0.75  brier=0.24366567 BSS= 2206.56 reliability=0.00005191 resolution=0.00541564 ECE=0.005658
+      mix-v4 diff=-60.56 (SE=9.35)
+    fold oracle classifier weight=1.000000
+
+[screen_compare] fold=2023
+    classifier v4 5+3      brier=0.25355358 BSS=    0.00 reliability=0.00472056 resolution=0.00117863 ECE=0.027971
+    single direct LGBM     brier=0.25344937 BSS=    0.00 reliability=0.00445912 resolution=0.00100223 ECE=0.029263
+    direct-v4 diff=+41.68 (SE=11.79)
+    mix cls/reg 0.75/0.25  brier=0.25348848 BSS=    0.00 reliability=0.00464558 resolution=0.00117090 ECE=0.027208
+      mix-v4 diff=+26.04 (SE=2.95)
+    mix cls/reg 0.50/0.50  brier=0.25344941 BSS=    0.00 reliability=0.00459140 resolution=0.00111924 ECE=0.027743
+      mix-v4 diff=+41.66 (SE=5.90)
+    mix cls/reg 0.25/0.75  brier=0.25343638 BSS=    0.00 reliability=0.00453935 resolution=0.00108352 ECE=0.028788
+      mix-v4 diff=+46.88 (SE=8.85)
+    fold oracle classifier weight=0.249801
+
+[screen_compare] fold=2024
+    classifier v4 5+3      brier=0.24818927 BSS=  647.56 reliability=0.00019801 resolution=0.00179511 ECE=0.012843
+    single direct LGBM     brier=0.24827956 BSS=  611.42 reliability=0.00020544 resolution=0.00172353 ECE=0.012684
+    direct-v4 diff=-36.14 (SE=11.53)
+    mix cls/reg 0.75/0.25  brier=0.24817209 BSS=  654.44 reliability=0.00020179 resolution=0.00182773 ECE=0.012789
+      mix-v4 diff=+6.88 (SE=2.88)
+    mix cls/reg 0.50/0.50  brier=0.24818140 BSS=  650.71 reliability=0.00019650 resolution=0.00180615 ECE=0.012736
+      mix-v4 diff=+3.15 (SE=5.77)
+    mix cls/reg 0.25/0.75  brier=0.24821723 BSS=  636.37 reliability=0.00020061 resolution=0.00177170 ECE=0.012682
+      mix-v4 diff=-11.19 (SE=8.65)
+    fold oracle classifier weight=0.712892
+
+[screen OOF pooled convex] classifier weight=0.687782, regressor weight=0.312218
+    pooled-weight fold 2022 brier=0.24354372 BSS= 2255.50 reliability=0.00003055 resolution=0.00552010 ECE=0.004379
+      pooled-weight-v4 diff=-11.62 (SE=3.89)
+    pooled-weight fold 2023 brier=0.25347632 BSS=    0.00 reliability=0.00464003 resolution=0.00116534 ECE=0.027268
+      pooled-weight-v4 diff=+30.90 (SE=3.68)
+    pooled-weight fold 2024 brier=0.24817193 BSS=  654.51 reliability=0.00019120 resolution=0.00181215 ECE=0.012776
+      pooled-weight-v4 diff=+6.94 (SE=3.60)

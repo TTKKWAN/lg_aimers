@@ -1,0 +1,60 @@
+
+[fold=2022] seed=2718 command confirmation
+0:	learn: 0.2494616	total: 366ms	remaining: 2m 7s
+100:	learn: 0.2431896	total: 24.4s	remaining: 1m
+200:	learn: 0.2425528	total: 49.6s	remaining: 36.8s
+300:	learn: 0.2420021	total: 1m 15s	remaining: 12.3s
+349:	learn: 0.2417350	total: 1m 27s	remaining: 0us
+  CatBoost seed=2718 fit+predict 91s
+  middle_reverse  replace=0.50 gain=  +16.82 SE=2.60 shift=-0.04276
+  middle_reverse  replace=1.00 gain=  +25.01 SE=5.20 shift=-0.04273
+0:	learn: 0.2494706	total: 297ms	remaining: 1m 43s
+100:	learn: 0.2431747	total: 26.7s	remaining: 1m 5s
+200:	learn: 0.2425433	total: 53.2s	remaining: 39.4s
+300:	learn: 0.2419630	total: 1m 20s	remaining: 13s
+349:	learn: 0.2416682	total: 1m 33s	remaining: 0us
+  CatBoost seed=2718 fit+predict 97s
+  all4            replace=0.50 gain=  +17.80 SE=2.77 shift=-0.04263
+  all4            replace=1.00 gain=  +25.80 SE=5.55 shift=-0.04247
+
+[fold=2023] seed=2718 command confirmation
+0:	learn: 0.2494556	total: 336ms	remaining: 1m 57s
+100:	learn: 0.2431242	total: 41.9s	remaining: 1m 43s
+200:	learn: 0.2425546	total: 1m 28s	remaining: 1m 5s
+300:	learn: 0.2421276	total: 2m 14s	remaining: 21.9s
+349:	learn: 0.2418934	total: 2m 36s	remaining: 0us
+  CatBoost seed=2718 fit+predict 160s
+  middle_reverse  replace=0.50 gain=  +30.12 SE=2.21 shift=-0.00249
+  middle_reverse  replace=1.00 gain=  +54.41 SE=4.41 shift=-0.00280
+0:	learn: 0.2494227	total: 389ms	remaining: 2m 15s
+100:	learn: 0.2430924	total: 42.3s	remaining: 1m 44s
+200:	learn: 0.2425415	total: 1m 24s	remaining: 1m 2s
+300:	learn: 0.2421000	total: 2m 5s	remaining: 20.4s
+349:	learn: 0.2418778	total: 2m 24s	remaining: 0us
+  CatBoost seed=2718 fit+predict 149s
+  all4            replace=0.50 gain=  +18.12 SE=2.31 shift=-0.00274
+  all4            replace=1.00 gain=  +29.86 SE=4.62 shift=-0.00329
+
+[fold=2024] seed=2718 command confirmation
+0:	learn: 0.2495215	total: 375ms	remaining: 2m 10s
+100:	learn: 0.2440127	total: 50.1s	remaining: 2m 3s
+200:	learn: 0.2435411	total: 1m 43s	remaining: 1m 16s
+300:	learn: 0.2431684	total: 2m 34s	remaining: 25.2s
+349:	learn: 0.2429709	total: 3m	remaining: 0us
+  CatBoost seed=2718 fit+predict 185s
+  middle_reverse  replace=0.50 gain=   +5.27 SE=2.18 shift=-0.02394
+  middle_reverse  replace=1.00 gain=   +4.42 SE=4.37 shift=-0.02407
+0:	learn: 0.2495164	total: 625ms	remaining: 3m 37s
+100:	learn: 0.2440253	total: 52.6s	remaining: 2m 9s
+200:	learn: 0.2435556	total: 1m 44s	remaining: 1m 17s
+300:	learn: 0.2431856	total: 2m 37s	remaining: 25.7s
+349:	learn: 0.2429932	total: 3m 5s	remaining: 0us
+  CatBoost seed=2718 fit+predict 191s
+  all4            replace=0.50 gain=   +6.93 SE=2.30 shift=-0.02395
+  all4            replace=1.00 gain=   +7.09 SE=4.60 shift=-0.02408
+
+SUMMARY two-seed command expert vs current v9
+middle_reverse  replace=0.50 gain=+16.82/+30.12/+5.27 mean=+17.40 SE=2.60/2.21/2.18
+middle_reverse  replace=1.00 gain=+25.01/+54.41/+4.42 mean=+27.95 SE=5.20/4.41/4.37
+all4            replace=0.50 gain=+17.80/+18.12/+6.93 mean=+14.29 SE=2.77/2.31/2.30
+all4            replace=1.00 gain=+25.80/+29.86/+7.09 mean=+20.92 SE=5.55/4.62/4.60

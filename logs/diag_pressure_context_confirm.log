@@ -1,0 +1,33 @@
+confirm: fixed-EB HGB5+LGBM3 baseline vs 3-member context expert
+context_features=49 members=3
+
+[fold=2022] train=728,588 val=247,472
+  member=1/3 seed=8049 leaves=31 BSS=2127.21 time=10s
+  member=2/3 seed=2718 leaves=15 BSS=2114.22 time=8s
+  member=3/3 seed=31415 leaves=63 BSS=2122.20 time=12s
+  fold oracle context weight=0.213012
+
+[fold=2023] train=976,060 val=245,525
+  member=1/3 seed=8049 leaves=31 BSS=0.00 time=12s
+  member=2/3 seed=2718 leaves=15 BSS=0.00 time=11s
+  member=3/3 seed=31415 leaves=63 BSS=0.00 time=15s
+  fold oracle context weight=0.525614
+
+[fold=2024] train=1,221,585 val=253,507
+  member=1/3 seed=8049 leaves=31 BSS=560.35 time=15s
+  member=2/3 seed=2718 leaves=15 BSS=558.60 time=13s
+  member=3/3 seed=31415 leaves=63 BSS=571.37 time=18s
+  fold oracle context weight=0.377070
+
+pooled OOF convex context weight=0.373159
+
+================================================================================================================
+CONFIRM SUMMARY — HGB5+LGBM3 fixed-EB baseline 대비 paired BSS gain
+================================================================================================================
+baseline             w=0.000000 Brier=0.24351478/0.25355358/0.24818927 BSS=2267.12/0.00/647.56 gain=+0.00/+0.00/+0.00 mean_gain=+0.00 SE=0.00/0.00/0.00
+base90_context10     w=0.100000 Brier=0.24349778/0.25350281/0.24814422 BSS=2273.94/0.00/665.59 gain=+6.82/+20.31/+18.03 mean_gain=+15.05 SE=1.80/1.89/2.08
+base80_context20     w=0.200000 Brier=0.24349122/0.25346272/0.24811295 BSS=2276.57/0.00/678.11 gain=+9.46/+36.34/+30.55 mean_gain=+25.45 SE=3.60/3.77/4.15
+base70_context30     w=0.300000 Brier=0.24349507/0.25343330/0.24809545 BSS=2275.03/0.00/685.12 gain=+7.91/+48.11/+37.56 mean_gain=+31.19 SE=5.40/5.66/6.23
+pooled_convex        w=0.373159 Brier=0.24350450/0.25341854/0.24809137 BSS=2271.24/0.00/686.75 gain=+4.13/+54.02/+39.19 mean_gain=+32.44 SE=6.72/7.04/7.75
+context_only         w=1.000000 Brier=0.24381399/0.25352624/0.24835859 BSS=2147.03/0.00/579.78 gain=-120.09/+10.94/-67.78 mean_gain=-58.98 SE=18.01/18.87/20.76
+fold oracle weights=2022:0.213012/2023:0.525614/2024:0.377070

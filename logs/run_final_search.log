@@ -1,0 +1,48 @@
+fold 2024: 실제 r=0.4861  외삽 r=0.4877
+
+=== shrink_k50  (features=91) ===
+  member 1/8 single= 510.61  (121s)
+  member 2/8 single= 484.90  (69s)
+  member 3/8 single= 563.86  (154s)
+  member 4/8 single= 503.93  (87s)
+  member 5/8 single= 486.00  (86s)
+  member 6/8 single= 327.41  (87s)
+  member 7/8 single= 489.14  (141s)
+  member 8/8 single= 419.98  (92s)
+  누적 앙상블: 1:511 2:570 3:609 4:616 5:619 6:609 7:612 8:609
+  >> raw= 608.73  외삽재중심화= 678.22  oracle재중심화= 679.35  mean(p)=0.4994
+
+=== shrink_k200  (features=91) ===
+  member 1/8 single= 502.19  (111s)
+  member 2/8 single= 399.85  (98s)
+  member 3/8 single= 523.08  (164s)
+  member 4/8 single= 503.05  (117s)
+  member 5/8 single= 408.46  (115s)
+  member 6/8 single= 486.65  (70s)
+  member 7/8 single= 501.38  (135s)
+  member 8/8 single= 445.05  (106s)
+  누적 앙상블: 1:502 2:536 3:576 4:594 5:590 6:600 7:605 8:607
+  >> raw= 607.46  외삽재중심화= 671.00  oracle재중심화= 672.13  mean(p)=0.4988
+
+=== shrink_k50_te  (features=93) ===
+  member 1/8 single= 441.29  (77s)
+  member 2/8 single= 391.61  (70s)
+  member 3/8 single= 405.38  (161s)
+  member 4/8 single= 361.27  (102s)
+  member 5/8 single= 340.62  (106s)
+  member 6/8 single= 358.95  (64s)
+  member 7/8 single= 346.98  (151s)
+  member 8/8 single= 317.29  (100s)
+  누적 앙상블: 1:441 2:474 3:487 4:487 5:486 6:487 7:486 8:485
+  >> raw= 485.21  외삽재중심화= 595.18  oracle재중심화= 596.31  mean(p)=0.5027
+
+==============================================================================
+요약 (fold 2024)
+==============================================================================
+shrink_k50      raw= 608.73  외삽재중심화= 678.22  oracle= 679.35   앙상블 1개->8개: 511 -> 609
+shrink_k200     raw= 607.46  외삽재중심화= 671.00  oracle= 672.13   앙상블 1개->8개: 502 -> 607
+shrink_k50_te   raw= 485.21  외삽재중심화= 595.18  oracle= 596.31   앙상블 1개->8개: 441 -> 485
+
+paired 비교 (기준=shrink_k50, 재중심화 후)
+  shrink_k200       -7.22점 (SE=9.9)
+  shrink_k50_te    -83.05점 (SE=10.1)

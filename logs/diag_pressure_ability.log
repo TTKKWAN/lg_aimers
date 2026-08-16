@@ -1,0 +1,68 @@
+fixed-EB v4 single-LGBM screen; folds=2022/2023/2024
+interactions=11 context_num=46
+
+[fold=2022] train=728,588 val=247,472
+/Users/taekwan/Desktop/lgaimers/.venv/lib/python3.11/site-packages/joblib/externals/loky/backend/context.py:131: UserWarning: Could not find the number of physical cores for the following reason:
+invalid literal for int() with base 10: ''
+Returning the number of logical cores instead. You can silence this warning by setting LOKY_MAX_CPU_COUNT to the number of cores you want to use.
+  warnings.warn(
+  File "/Users/taekwan/Desktop/lgaimers/.venv/lib/python3.11/site-packages/joblib/externals/loky/backend/context.py", line 249, in _count_physical_cores
+    cpu_count_physical = _count_physical_cores_darwin()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/taekwan/Desktop/lgaimers/.venv/lib/python3.11/site-packages/joblib/externals/loky/backend/context.py", line 318, in _count_physical_cores_darwin
+    return int(cpu_info)
+           ^^^^^^^^^^^^^
+  baseline trained 22s
+  +interactions trained 20s
+  context expert trained 9s
+  baseline             brier=0.24363375 BSS= 2219.37 gain=  +0.00 SE=0.00
+  interactions         brier=0.24363697 BSS= 2218.08 gain=  -1.29 SE=15.04
+  context_only         brier=0.24386337 BSS= 2127.21 gain= -92.16 SE=20.36
+  base90_context10     brier=0.24359692 BSS= 2234.15 gain= +14.78 SE=2.04
+  base80_context20     brier=0.24357339 BSS= 2243.60 gain= +24.23 SE=4.07
+  base70_context30     brier=0.24356313 BSS= 2247.71 gain= +28.34 SE=6.11
+
+[fold=2023] train=976,060 val=245,525
+  baseline trained 23s
+  +interactions trained 25s
+  context expert trained 12s
+  baseline             brier=0.25349253 BSS=    0.00 gain=  +0.00 SE=0.00
+  interactions         brier=0.25333888 BSS=    0.00 gain= +61.46 SE=14.22
+  context_only         brier=0.25356827 BSS=    0.00 gain= -30.29 SE=20.90
+  base90_context10     brier=0.25344107 BSS=    0.00 gain= +20.59 SE=2.09
+  base80_context20     brier=0.25340272 BSS=    0.00 gain= +35.92 SE=4.18
+  base70_context30     brier=0.25337750 BSS=    0.00 gain= +46.01 SE=6.27
+
+[fold=2024] train=1,221,585 val=253,507
+  baseline trained 29s
+  +interactions trained 31s
+  context expert trained 14s
+  baseline             brier=0.24821748 BSS=  636.27 gain=  +0.00 SE=0.00
+  interactions         brier=0.24822733 BSS=  632.33 gain=  -3.95 SE=13.58
+  context_only         brier=0.24840714 BSS=  560.35 gain= -75.93 SE=21.75
+  base90_context10     brier=0.24816837 BSS=  655.93 gain= +19.66 SE=2.18
+  base80_context20     brier=0.24813439 BSS=  669.53 gain= +33.26 SE=4.35
+  base70_context30     brier=0.24811553 BSS=  677.08 gain= +40.81 SE=6.53
+
+=========================================================================================================
+SUMMARY — baseline 대비 동일 행 paired BSS gain (양수=개선)
+=========================================================================================================
+baseline             Brier=0.24363375/0.25349253/0.24821748 BSS=2219.37/0.00/636.27 gain=+0.00/+0.00/+0.00 mean_gain=+0.00 SE=0.00/0.00/0.00
+interactions         Brier=0.24363697/0.25333888/0.24822733 BSS=2218.08/0.00/632.33 gain=-1.29/+61.46/-3.95 mean_gain=+18.74 SE=15.04/14.22/13.58
+context_only         Brier=0.24386337/0.25356827/0.24840714 BSS=2127.21/0.00/560.35 gain=-92.16/-30.29/-75.93 mean_gain=-66.13 SE=20.36/20.90/21.75
+base90_context10     Brier=0.24359692/0.25344107/0.24816837 BSS=2234.15/0.00/655.93 gain=+14.78/+20.59/+19.66 mean_gain=+18.34 SE=2.04/2.09/2.18
+base80_context20     Brier=0.24357339/0.25340272/0.24813439 BSS=2243.60/0.00/669.53 gain=+24.23/+35.92/+33.26 mean_gain=+31.14 SE=4.07/4.18/4.35
+base70_context30     Brier=0.24356313/0.25337750/0.24811553 BSS=2247.71/0.00/677.08 gain=+28.34/+46.01/+40.81 mean_gain=+38.39 SE=6.11/6.27/6.53
+
+interaction columns:
+- pa_full_x_success_skill
+- pa_full_x_ball_skill
+- pa_three_ball_x_ball_skill
+- pa_risp_x_success_skill
+- pa_risp_x_ball_skill
+- pa_logli_x_success_skill
+- pa_logli_x_ball_skill
+- pa_late_x_success_skill
+- pa_close_x_success_skill
+- pa_logli_x_reliability
+- pa_highli_x_recent3_dev

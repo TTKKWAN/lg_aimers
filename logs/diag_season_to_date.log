@@ -1,0 +1,53 @@
+season-to-date quick screen: v4 fixed-EB + add-only; LGBM seed=99
+snapshots are built from fold-train rows only; previous season is strict (< row season)
+
+[fold=2022] train=728,588 val=247,472
+  diag pitcher : known=84.261% valid_n=84.139% invalid_n=0.0000% invalid_count=0.0396% delta_n_q10/50/90=75/524/1754
+    invalid_by_rate=pitcher_success_rate:0.000%, pitcher_reverse_rate:0.007%, pitcher_middle_rate:0.002%, pitcher_ball_rate:0.002%, pitcher_strike_rate:0.030%
+  diag pitchmix: known=84.261% valid_n=84.139% invalid_n=0.0000% invalid_count=0.2166% delta_n_q10/50/90=75/524/1754
+    invalid_by_rate=pitcher_fastball_rate:0.204%, pitcher_breaking_rate:0.011%, pitcher_offspeed_rate:0.001%
+  diag batter  : known=88.977% valid_n=88.850% invalid_n=0.0000% invalid_count=0.0048% delta_n_q10/50/90=78/598/1627
+    invalid_by_rate=batter_success_rate:0.000%, batter_middle_rate:0.005%
+  baseline reused from ./experiments/preds/pressure_ability_2022.npz
+  baseline             brier=0.24363375 BSS= 2219.37
+  pitcher_success      brier=0.24342711 BSS= 2302.30 gain= +82.93 SE=17.46 pred=[0.27531,0.82446] clip=0.0000% time=19s new=8
+  pitcher_outcomes     brier=0.24356056 BSS= 2248.74 gain= +29.37 SE=18.97 pred=[0.30404,0.84532] clip=0.0000% time=20s new=20
+  plus_pitchmix        brier=0.24357041 BSS= 2244.79 gain= +25.42 SE=19.59 pred=[0.29281,0.82510] clip=0.0000% time=43s new=34
+  plus_batter          brier=0.24358175 BSS= 2240.24 gain= +20.87 SE=20.82 pred=[0.28007,0.81786] clip=0.0000% time=26s new=45
+
+[fold=2023] train=976,060 val=245,525
+  diag pitcher : known=86.202% valid_n=86.072% invalid_n=0.0000% invalid_count=0.0403% delta_n_q10/50/90=74/516/1634
+    invalid_by_rate=pitcher_success_rate:0.000%, pitcher_reverse_rate:0.009%, pitcher_middle_rate:0.006%, pitcher_ball_rate:0.008%, pitcher_strike_rate:0.019%
+  diag pitchmix: known=86.202% valid_n=86.072% invalid_n=0.0000% invalid_count=0.2195% delta_n_q10/50/90=74/516/1634
+    invalid_by_rate=pitcher_fastball_rate:0.204%, pitcher_breaking_rate:0.010%, pitcher_offspeed_rate:0.005%
+  diag batter  : known=90.595% valid_n=90.462% invalid_n=0.0000% invalid_count=0.0024% delta_n_q10/50/90=77/568/1567
+    invalid_by_rate=batter_success_rate:0.000%, batter_middle_rate:0.002%
+  baseline reused from ./experiments/preds/pressure_ability_2023.npz
+  baseline             brier=0.25349253 BSS=    0.00
+  pitcher_success      brier=0.25295092 BSS=    0.00 gain=+216.65 SE=17.72 pred=[0.29698,0.79340] clip=0.0000% time=26s new=8
+  pitcher_outcomes     brier=0.25299713 BSS=    0.00 gain=+198.16 SE=18.55 pred=[0.29959,0.80910] clip=0.0000% time=28s new=20
+  plus_pitchmix        brier=0.25300248 BSS=    0.00 gain=+196.02 SE=18.93 pred=[0.30243,0.78817] clip=0.0000% time=31s new=34
+  plus_batter          brier=0.25230900 BSS=    0.00 gain=+473.41 SE=21.32 pred=[0.31706,0.78008] clip=0.0000% time=32s new=45
+
+[fold=2024] train=1,221,585 val=253,507
+  diag pitcher : known=80.139% valid_n=80.017% invalid_n=0.0000% invalid_count=0.0418% delta_n_q10/50/90=72/490/1564
+    invalid_by_rate=pitcher_success_rate:0.000%, pitcher_reverse_rate:0.011%, pitcher_middle_rate:0.007%, pitcher_ball_rate:0.011%, pitcher_strike_rate:0.014%
+  diag pitchmix: known=80.139% valid_n=80.017% invalid_n=0.0000% invalid_count=0.2272% delta_n_q10/50/90=72/490/1564
+    invalid_by_rate=pitcher_fastball_rate:0.206%, pitcher_breaking_rate:0.019%, pitcher_offspeed_rate:0.002%
+  diag batter  : known=90.695% valid_n=90.563% invalid_n=0.0000% invalid_count=0.0051% delta_n_q10/50/90=78/631/1701
+    invalid_by_rate=batter_success_rate:0.000%, batter_middle_rate:0.005%
+  baseline reused from ./experiments/preds/pressure_ability_2024.npz
+  baseline             brier=0.24821748 BSS=  636.27
+  pitcher_success      brier=0.24816872 BSS=  655.79 gain= +19.52 SE=17.30 pred=[0.31361,0.69766] clip=0.0000% time=32s new=8
+  pitcher_outcomes     brier=0.24819680 BSS=  644.55 gain=  +8.28 SE=18.37 pred=[0.31204,0.68556] clip=0.0000% time=33s new=20
+  plus_pitchmix        brier=0.24818153 BSS=  650.66 gain= +14.39 SE=18.51 pred=[0.29881,0.68159] clip=0.0000% time=36s new=34
+  plus_batter          brier=0.24798364 BSS=  729.88 gain= +93.61 SE=20.09 pred=[0.29302,0.69697] clip=0.0000% time=38s new=45
+
+==============================================================================================================
+SUMMARY — baseline 대비 동일 행 paired BSS gain (양수=개선)
+==============================================================================================================
+baseline             Brier=0.24363375/0.25349253/0.24821748 BSS=2219.37/0.00/636.27 gain=+0.00/+0.00/+0.00 mean_gain=+0.00 SE=0.00/0.00/0.00
+pitcher_success      Brier=0.24342711/0.25295092/0.24816872 BSS=2302.30/0.00/655.79 gain=+82.93/+216.65/+19.52 mean_gain=+106.37 SE=17.46/17.72/17.30
+pitcher_outcomes     Brier=0.24356056/0.25299713/0.24819680 BSS=2248.74/0.00/644.55 gain=+29.37/+198.16/+8.28 mean_gain=+78.60 SE=18.97/18.55/18.37
+plus_pitchmix        Brier=0.24357041/0.25300248/0.24818153 BSS=2244.79/0.00/650.66 gain=+25.42/+196.02/+14.39 mean_gain=+78.61 SE=19.59/18.93/18.51
+plus_batter          Brier=0.24358175/0.25230900/0.24798364 BSS=2240.24/0.00/729.88 gain=+20.87/+473.41/+93.61 mean_gain=+195.96 SE=20.82/21.32/20.09
