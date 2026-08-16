@@ -36,9 +36,6 @@ open/baseline_submit/
 
 ## 실행 위치
 
-모든 명령은 저장소 루트에서 실행합니다. 전체 학습은 로컬이 아니라 Google Colab에서
-실행하는 것을 기준으로 합니다.
-
 ```bash
 python3 scripts/build_final.py 50 te0 8 0.5 3 era0 context0 season1 0.75
 python3 scripts/build_catboost_final.py
