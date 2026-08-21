@@ -6,12 +6,12 @@
   k           : 축소 강도
   num_cols    : 추론 피처의 전체 수치형 컬럼 순서(union)
   member_num_cols: 각 멤버가 실제 학습한 수치형 컬럼 순서
-  era_specs   : 시즌별 리그 중심과 미래 외삽식(X_train에서만 산출)
+  era_specs   : 모든 모델이 공유하는 시즌별 중심과 미래 외삽식
   context_members/context_num_cols/context_weight: 압박 context 보조 앙상블 계약
   te_maps     : 타깃 인코딩 룩업 (사용 시)
   recenter_to : 추론 시 맞출 평균 예측치 (None 이면 재중심화 안 함)
 
-사용법:  python3 build_final.py [k] [te0|te1] [n_hgb] [recenter_fraction] [n_lgbm] [era0|era1] [context0|context1] [season0|season1] [lgbm_family_weight]
+사용법:  python3 build_final.py [k] [te0|te1] [n_hgb] [recenter_fraction] [n_lgbm] [era0|era1(공통 regime)] [context0|context1] [season0|season1] [lgbm_family_weight]
 """
 import os
 import sys
@@ -24,6 +24,8 @@ import pandas as pd
 from pipeline import (ID, TARGET, CAT_COLS, DERIVED_COLS, TE_FEATURE_COLS, TE_COLS,
                        RATE_N_PAIRS, ERA_SKILL_COLS, add_derived, add_shrinkage,
                        shrinkage_cols, fit_prior, fit_era_prior, add_era_features,
+                       regime_base_num_cols, regime_season_success_cols,
+                       add_regime_current_features,
                        PRESSURE_ABILITY_COLS, CONTEXT_NUM_COLS,
                        add_pressure_ability, TargetEncoder, make_model,
                        make_lgbm_model, make_context_lgbm_model, bss,
@@ -39,7 +41,8 @@ N_MEMBERS = int(sys.argv[3]) if len(sys.argv) > 3 else 8
 # 재중심화 비율: 0=안 함(모델 자연 평균 유지), 1=추세 외삽값까지 완전 이동
 RECENTER_F = float(sys.argv[4]) if len(sys.argv) > 4 else 0.0
 N_LGBM = int(sys.argv[5]) if len(sys.argv) > 5 else 0
-ERA_LGBM = (sys.argv[6] == "era1") if len(sys.argv) > 6 else False
+# 기존 CLI 위치/표현(era1)은 유지하되 v13에서는 모든 모델의 공통 전처리다.
+USE_SHARED_REGIME = (sys.argv[6] == "era1") if len(sys.argv) > 6 else False
 USE_CONTEXT = (sys.argv[7] == "context1") if len(sys.argv) > 7 else False
 USE_SEASON_SUCCESS = (sys.argv[8] == "season1") if len(sys.argv) > 8 else False
 LGBM_FAMILY_WEIGHT = float(sys.argv[9]) if len(sys.argv) > 9 else None
@@ -82,17 +85,15 @@ def log(*a):
 
 
 log(f"설정: k={K} te={USE_TE} hgb_members={N_MEMBERS} lgbm_members={N_LGBM} "
-    f"recenter_f={RECENTER_F} era_lgbm={ERA_LGBM} "
+    f"recenter_f={RECENTER_F} shared_regime={USE_SHARED_REGIME} "
     f"context_members={len(CONTEXT_HETERO)} context_weight={CONTEXT_WEIGHT:.2f} "
     f"season_success={USE_SEASON_SUCCESS} lgbm_family_weight={LGBM_FAMILY_WEIGHT}")
 if LGBM_FAMILY_WEIGHT is not None and not (0.0 <= LGBM_FAMILY_WEIGHT <= 1.0):
     raise ValueError("lgbm_family_weight는 [0, 1]이어야 한다")
-if USE_CONTEXT and ERA_LGBM:
-    raise ValueError("검증된 context 후보는 v4 fixed EB 전용이다: era1과 context1 동시 사용 금지")
+if USE_CONTEXT and USE_SHARED_REGIME:
+    raise ValueError("공통 regime 전처리 후보는 context expert를 사용하지 않는다")
 if USE_CONTEXT and USE_SEASON_SUCCESS:
     raise ValueError("v7 season-to-date는 context 제거 조건으로 검증됐다")
-if ERA_LGBM and USE_SEASON_SUCCESS:
-    raise ValueError("v7 season-to-date는 fixed EB 조건으로 검증됐다")
 if USE_SEASON_SUCCESS and N_LGBM == 0:
     raise ValueError("season1 피처는 검증된 LightGBM 멤버가 하나 이상 필요하다")
 
@@ -117,23 +118,27 @@ log(f"{TARGET_SEASON} 외삽 정답률 = {r_extrap:.4f} (최근 3시즌 직선 �
 # ---- 피처 구성 ----
 prior = fit_prior(raw)
 sh = add_shrinkage(base_df, prior, K)
-static_num_cols = list(RAW_NUM) + list(DERIVED_COLS) + shrinkage_cols()
 X = pd.concat([base_df, sh], axis=1)
+era_specs = fit_era_prior(raw) if USE_SHARED_REGIME else None
+if era_specs is not None:
+    X = pd.concat([X, add_era_features(raw, era_specs, K)], axis=1)
+    static_num_cols = regime_base_num_cols(RAW_NUM)
+else:
+    static_num_cols = list(RAW_NUM) + list(DERIVED_COLS) + shrinkage_cols()
 season_success_lookup = None
 season_cols = []
 if USE_SEASON_SUCCESS:
-    season_cols = season_success_cols()
+    season_cols = (regime_season_success_cols() if era_specs is not None
+                   else season_success_cols())
     train_for_season = pd.concat([X, y.rename(TARGET)], axis=1)
-    X = pd.concat([X, add_season_success_train_features(train_for_season, prior, K)], axis=1)
+    season_raw = add_season_success_train_features(train_for_season, prior, K)
+    X = pd.concat([X, season_raw], axis=1)
+    if era_specs is not None:
+        X = pd.concat([X, add_regime_current_features(X, era_specs, K)], axis=1)
     season_success_lookup = fit_season_success_lookup(raw)
 context_num_cols = list(CONTEXT_NUM_COLS) if USE_CONTEXT else None
 if USE_CONTEXT:
     X = pd.concat([X, add_pressure_ability(X, prior)], axis=1)
-
-era_specs = None
-if ERA_LGBM and N_LGBM:
-    era_specs = fit_era_prior(raw)
-    X = pd.concat([X, add_era_features(raw, era_specs, K)], axis=1)
 
 te_maps = None
 if USE_TE:
@@ -143,12 +148,7 @@ if USE_TE:
     te_maps = dict(global_=te.global_, maps={c: te.maps_[c] for c in TE_COLS},
                     smooth=te.smooth, cols=TE_COLS)
 
-static_sh_rate_cols = {f"sh_{r}" for r, _ in RATE_N_PAIRS}
-if era_specs is not None:
-    lgbm_num_cols = [c for c in static_num_cols if c not in static_sh_rate_cols]
-    lgbm_num_cols += ERA_SKILL_COLS
-else:
-    lgbm_num_cols = list(static_num_cols)
+lgbm_num_cols = list(static_num_cols)
 lgbm_num_cols += season_cols
 num_cols = list(static_num_cols)
 for col in lgbm_num_cols:
@@ -254,11 +254,15 @@ bundle = dict(members=members, member_num_cols=member_num_cols,
                season_success_lookup=season_success_lookup,
                lgbm_family_weight=LGBM_FAMILY_WEIGHT,
                cat_cols=CAT_COLS, te_maps=te_maps, logit_shift=logit_shift,
-               meta=dict(n_members=len(members), n_hgb=N_MEMBERS, n_lgbm=N_LGBM,
+               meta=dict(version=("v13_shared_regime_base" if era_specs is not None
+                                  else "legacy_base"),
+                         n_members=len(members), n_hgb=N_MEMBERS, n_lgbm=N_LGBM,
                          n_context=len(context_members), context_weight=CONTEXT_WEIGHT,
                          r_extrap=r_extrap, target_season=TARGET_SEASON,
                          recenter_f=RECENTER_F, last_season=last_season,
-                         p_last_mean=float(p_last.mean()), era_lgbm=ERA_LGBM,
+                         p_last_mean=float(p_last.mean()),
+                         era_lgbm=USE_SHARED_REGIME,
+                         shared_regime=bool(era_specs is not None),
                          season_success=USE_SEASON_SUCCESS,
                          lgbm_family_weight=LGBM_FAMILY_WEIGHT,
                          n_season_features=len(season_cols)))

@@ -30,31 +30,35 @@ Score = max(0, 100000 * (1 - Brier / Base))
 - 외부 데이터와 원격 API 모델은 사용하지 않는다.
 - 현재 투구 이후 확정되는 정보는 입력에 포함하지 않는다.
 
-## 4. 현재 v12 방식
+## 4. 현재 산출물 상태
 
-- 공통 fixed-EB 피처로 HGB 8개와 LightGBM 3개를 학습하고 25:75로 혼합한다.
-- CatBoost 2개와 현 시즌 command CatBoost 2개를 반반 혼합한 뒤, base 40%와
-  CatBoost family 60%를 혼합한다.
-- 2024 ABS regime CatBoost 2개 평균을 10% 혼합한다.
-- 2스트라이크·비풀카운트에서 같은 투수의 2024 chase 정책을 신뢰도에 따라 최대
-  20% 적용한다. 투수 간 정보는 공유하지 않는다.
-- 학습 데이터에서 산출한 `logit_shift=-0.05087341`을 행별로 적용한다.
+- 루트 `submit.zip`은 실험 제출용 `v13_shared_regime_chase`다.
+- 누적·최근·현 시즌 rate를 시즌 중심 대비 상대값으로 바꿔 모든 모델이 공유한다.
+- HGB8 + LightGBM3 + CatBoost2 + command CatBoost2 + ABS CatBoost2를 사용한다.
+- ABS expert 비중은 25%, 투수별 chase policy 최대 비중은 20%다.
+- v13의 `logit_shift=-0.04985414`다.
+- v13 실전 제출 점수는 **1038**로, 이전 확인 최고 v11의 1018보다 20점 높다.
+- v12는 실전 미제출이므로 v13과 v12의 직접 리더보드 비교값은 없다.
+- `open/baseline_submit/model/bundle.pkl`은 비교·복구용 v12를 유지한다.
 
-전체 피처와 수식은 `METHOD.md`가 기준이다.
+v13 후보 계약은 `METHOD_V13_CANDIDATE.md`, v12 기준 계약은 `METHOD.md`다.
 
 ## 5. 저장소 구조
 
 ```text
 AGENTS.md, CLAUDE.md, ARCHITECTURE.md, METHOD.md, README.md
-scripts/                  현재 v12 학습·검증 코드
+scripts/                  v12 호환 + v13 학습·검증 코드
 open/data/                공식 데이터(.gitignore 제외)
 open/baseline_submit/     script.py, requirements.txt, model/bundle.pkl
 backups/                  로컬 백업(.gitignore 제외)
 submit.zip                현재 제출물(.gitignore 제외)
 ```
 
-현재 모델 번들 메타 버전은 `v12_pitcher_chase_policy_20`이다. 현재 제출 ZIP의
-SHA-256은 `d455adc05108e56eef1d128904270cecdb60ff933124b17e87cedefb1807e47d`다.
+현재 루트 제출 ZIP의 SHA-256은
+`66d4b618a9a0793667e2e932a67c6b92aa8e21fbc52f2be2d9b6cefe0380b5e8`다.
+내부 번들 SHA-256은
+`59beb89219190bd8cf2aad8b9dff1fcc76cb0739907de18194641260714d598d`다.
+교체 전 v12 ZIP은 `backups/submit_v12_before_v13_abs25.zip`에 보존돼 있다.
 
 ## 6. 학습과 검증
 

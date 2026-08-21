@@ -1,4 +1,4 @@
-"""v11 위에 투수별 chase 정책 lookup을 추가한 v12 후보 번들을 만든다."""
+"""ABS 번들 위에 투수별 chase 정책 lookup을 추가한다."""
 import os
 
 import joblib
@@ -7,7 +7,7 @@ import pandas as pd
 from pipeline import TARGET, fit_pitcher_chase_policy_lookup
 
 SOURCE = "./open/baseline_submit/model/bundle.pkl"
-OUTPUT = "./open/baseline_submit/model/bundle_v12_pitcher_chase_candidate.pkl"
+OUTPUT = "./open/baseline_submit/model/bundle_v13_shared_regime_candidate.pkl"
 K_STATE = 100.0
 K_CURRENT = 50.0
 W_MAX = 0.20
@@ -15,8 +15,9 @@ W_MAX = 0.20
 
 def main():
     bundle = joblib.load(SOURCE)
-    if bundle.get("meta", {}).get("version") != "v11_abs_regime_10":
-        raise RuntimeError("source bundle is not v11_abs_regime_10")
+    source_version = bundle.get("meta", {}).get("version")
+    if source_version not in {"v11_abs_regime_10", "v13_shared_regime_abs25"}:
+        raise RuntimeError(f"unsupported ABS bundle: {source_version}")
     cols = ["season", "pitcher_id", "balls_before", "strikes_before",
             "asof_pitcher_n", "asof_pitcher_success_rate", TARGET]
     raw = pd.read_csv("./open/data/train.csv", usecols=cols)
@@ -26,7 +27,9 @@ def main():
     bundle["pitcher_chase_k_current"] = K_CURRENT
     bundle["pitcher_chase_w_max"] = W_MAX
     bundle["meta"] = dict(
-        bundle["meta"], version="v12_pitcher_chase_policy_20",
+        bundle["meta"],
+        version=("v13_shared_regime_chase" if bundle["meta"].get("shared_regime")
+                 else "v12_pitcher_chase_policy_20"),
         pitcher_chase_history_season=lookup["season"],
         pitcher_chase_pitchers=len(lookup["chase_rate"]),
         pitcher_chase_k_state=K_STATE,

@@ -50,6 +50,16 @@ TE_COLS = ["pitcher_id", "batter_id"]
 # n/(n+k) * (rate - 해당 시즌 리그 중심)을 사용한다.
 ERA_RATES = [r for r, _ in RATE_N_PAIRS]
 ERA_SKILL_COLS = [f"era_skill_{r}" for r in ERA_RATES]
+ERA_RECENT_SKILL_COLS = [f"era_skill_{c}" for c, _, _ in PREV_SPECS]
+ERA_GAP_COLS = [
+    "era_pitcher_command_gap", "era_pitcher_recent_trend",
+    "era_batter_pitcher_gap",
+]
+REGIME_FEATURE_COLS = ERA_SKILL_COLS + ERA_RECENT_SKILL_COLS + ERA_GAP_COLS
+REGIME_RAW_COLS = set(ERA_RATES + [c for c, _, _ in PREV_SPECS])
+REGIME_DERIVED_DROP = {
+    "pitcher_command_gap", "pitcher_recent_trend", "batter_pitcher_gap",
+}
 
 
 # ---------------------------------------------------------------- 파생 피처
@@ -340,7 +350,11 @@ def expected_era_rate(seasons, spec):
 
 
 def add_era_features(df, era_specs, k):
-    """리그의 시대 수준을 뺀, 신뢰도 보정 개인 상대능력."""
+    """리그의 시즌별 관측 중심을 제거한 공통 regime 상대능력.
+
+    절대 누적/최근 비율 대신 이 블록을 모델 입력에 사용하면 ABS 전후처럼
+    관측체계가 달라진 시즌도 '그 시즌 평균 대비 능력' 축에서 비교할 수 있다.
+    """
     out = {}
     for rate, ncol in RATE_N_PAIRS:
         r = df[rate].to_numpy(dtype=float)
@@ -349,6 +363,69 @@ def add_era_features(df, era_specs, k):
         rf = np.where(np.isnan(r), era, r)
         nf = np.where(np.isnan(r), 0.0, n)
         out[f"era_skill_{rate}"] = (nf / (nf + k)) * (rf - era)
+    for col, pseudo_n, base_rate in PREV_SPECS:
+        r = df[col].to_numpy(dtype=float)
+        era = expected_era_rate(df["season"].to_numpy(), era_specs[base_rate])
+        valid = np.isfinite(r)
+        out[f"era_skill_{col}"] = np.where(
+            valid, (pseudo_n / (pseudo_n + k)) * (r - era), 0.0)
+    out["era_pitcher_command_gap"] = (
+        out["era_skill_asof_pitcher_success_rate"]
+        - out["era_skill_asof_pitcher_middle_rate"])
+    out["era_pitcher_recent_trend"] = (
+        out["era_skill_asof_pitcher_prev1_game_success_rate"]
+        - out["era_skill_asof_pitcher_prev5_game_success_rate"])
+    out["era_batter_pitcher_gap"] = (
+        out["era_skill_asof_batter_success_rate"]
+        - out["era_skill_asof_pitcher_success_rate"])
+    return pd.DataFrame(out, index=df.index)
+
+
+def regime_base_num_cols(raw_num_cols):
+    """절대 rate를 제거하고 공통 regime 피처로 교체한 기본 수치 컬럼."""
+    raw = [c for c in raw_num_cols if c not in REGIME_RAW_COLS]
+    derived = [c for c in DERIVED_COLS if c not in REGIME_DERIVED_DROP]
+    removed_shrink = ({f"sh_{r}" for r in ERA_RATES}
+                      | {f"sh_{c}" for c, _, _ in PREV_SPECS}
+                      | {f"dev_{c}" for c, _, _ in PREV_SPECS})
+    stable_shrink = [c for c in shrinkage_cols() if c not in removed_shrink]
+    return raw + derived + stable_shrink + list(REGIME_FEATURE_COLS)
+
+
+def regime_current_cols(rates):
+    return [name for rate in rates for name in (
+        f"era_std_{rate}", f"era_std_sh_{rate}", f"era_std_dev_{rate}")]
+
+
+def regime_season_success_cols():
+    cols = []
+    for group, (_, _, rate) in SEASON_SUCCESS_SPECS.items():
+        cols += [f"std_{group}_known", f"std_{group}_invalid_n", f"std_{group}_n",
+                 f"std_{group}_log_n", f"std_{group}_rel_n"]
+        cols += regime_current_cols([rate])
+    return cols
+
+
+def add_regime_current_features(df, era_specs, k):
+    """현 시즌 success/command도 해당 시즌 중심 대비 상대값으로 변환한다."""
+    out = {}
+    rates = [spec[2] for spec in SEASON_SUCCESS_SPECS.values()] + SEASON_COMMAND_RATES
+    seasons = df["season"].to_numpy()
+    for rate in rates:
+        raw_col = f"std_{rate}"
+        if raw_col not in df:
+            continue
+        group = "batter" if rate.startswith("asof_batter") else "pitcher"
+        n = df[f"std_{group}_n"].to_numpy(dtype=float)
+        raw = df[raw_col].to_numpy(dtype=float)
+        era = expected_era_rate(seasons, era_specs[rate])
+        rel = n / (n + k)
+        skill = raw - era
+        sh_skill = rel * skill
+        out[f"era_std_{rate}"] = skill
+        out[f"era_std_sh_{rate}"] = sh_skill
+        out[f"era_std_dev_{rate}"] = (
+            sh_skill - df[f"era_skill_{rate}"].to_numpy(dtype=float))
     return pd.DataFrame(out, index=df.index)
 
 

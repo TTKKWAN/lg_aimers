@@ -1,8 +1,8 @@
-"""v9에 검증된 current-season all4 command CatBoost2를 50% 추가한다.
+"""base CatBoost에 current-season all4 command CatBoost2를 50% 추가한다.
 
-입력 v9 production 번들은 변경하지 않는다. 전체 2019~2024 데이터로 command
+입력 번들은 변경하지 않는다. 전체 2019~2024 데이터로 command
 expert 두 시드를 학습하고 candidate 번들에만 저장한다. 최종 혼합은
-v8 40% + [기존 CatBoost2 50% + command CatBoost2 50%] 60%이며, 혼합된
+base 40% + [기존 CatBoost2 50% + command CatBoost2 50%] 60%이며, 혼합된
 2024 학습 예측으로 production 동일 recenter_f=0.5 shift를 다시 고정한다.
 """
 import os
@@ -17,12 +17,14 @@ from pipeline import (ID, TARGET, add_derived, add_shrinkage,
                       add_season_success_train_features,
                       add_season_command_train_features,
                       fit_season_command_lookup, season_command_cols,
-                      add_catboost_context)
+                      add_catboost_context, add_era_features,
+                      add_regime_current_features, regime_current_cols,
+                      SEASON_COMMAND_RATES)
 
 
 DATA_DIR = "./open/data"
 SOURCE_PATH = "./open/baseline_submit/model/bundle.pkl"
-OUTPUT_PATH = "./open/baseline_submit/model/bundle_v10_candidate.pkl"
+OUTPUT_PATH = "./open/baseline_submit/model/bundle_v13_command_candidate.pkl"
 SEEDS = [2026, 2718]
 COMMAND_WEIGHT = 0.50
 
@@ -44,8 +46,9 @@ def load_bundle(path, attempts=5):
 def main():
     bundle = load_bundle(SOURCE_PATH)
     meta = bundle.get("meta", {})
-    if meta.get("version") != "v9_catboost_expert":
-        raise RuntimeError(f"v9 production 번들이 아님: {meta.get('version')}")
+    valid_sources = {"v9_catboost_expert", "v13_shared_regime_catboost"}
+    if meta.get("version") not in valid_sources:
+        raise RuntimeError(f"지원하지 않는 CatBoost 번들: {meta.get('version')}")
     if len(bundle.get("catboost_members") or []) != 2:
         raise RuntimeError("기존 CatBoost2 계약이 없음")
     if bundle.get("catboost_command_members"):
@@ -60,15 +63,29 @@ def main():
     base = pd.concat([raw[raw_features], add_derived(raw)], axis=1)
     sh = add_shrinkage(base, bundle["prior"], bundle["k"])
     x0 = pd.concat([base, sh], axis=1)
+    if bundle.get("era_specs"):
+        x0 = pd.concat([
+            x0, add_era_features(raw, bundle["era_specs"], bundle["k"])
+        ], axis=1)
     train_with_target = pd.concat([x0, y.rename(TARGET)], axis=1)
     success = add_season_success_train_features(
         train_with_target, bundle["prior"], bundle["k"])
     command = add_season_command_train_features(
         train_with_target, bundle["prior"], bundle["k"])
     xbase = pd.concat([x0, success], axis=1)
-    xcat = pd.concat([xbase, command, add_catboost_context(raw)], axis=1)
+    if bundle.get("era_specs"):
+        xbase = pd.concat([
+            xbase, command,
+            add_regime_current_features(
+                pd.concat([xbase, command], axis=1),
+                bundle["era_specs"], bundle["k"]),
+        ], axis=1)
+        xcat = pd.concat([xbase, add_catboost_context(raw)], axis=1)
+    else:
+        xcat = pd.concat([xbase, command, add_catboost_context(raw)], axis=1)
 
-    command_cols = season_command_cols()
+    command_cols = (regime_current_cols(SEASON_COMMAND_RATES)
+                    if bundle.get("era_specs") else season_command_cols())
     features = list(bundle["catboost_feature_cols"]) + command_cols
     if len(features) != len(set(features)):
         raise RuntimeError("command feature 중복")
@@ -118,7 +135,9 @@ def main():
     bundle["catboost_command_weight"] = COMMAND_WEIGHT
     bundle["logit_shift"] = shift
     bundle["meta"] = dict(
-        meta, version="v10_command_all4_50", n_catboost_command=len(SEEDS),
+        meta, version=("v13_shared_regime_command" if meta.get("shared_regime")
+                       else "v10_command_all4_50"),
+        n_catboost_command=len(SEEDS),
         catboost_command_weight=COMMAND_WEIGHT,
         n_catboost_command_features=len(features), p_last_mean=natural,
     )

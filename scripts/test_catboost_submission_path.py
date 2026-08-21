@@ -6,8 +6,11 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from pipeline import (CATBOOST_CAT_COLS, add_catboost_context,
-                      add_season_command_features)
+from pipeline import (
+    CATBOOST_CAT_COLS, add_catboost_context, add_derived, add_shrinkage,
+    add_season_success_features, add_season_command_features,
+    add_era_features, add_regime_current_features,
+)
 
 
 SCRIPT = "./open/baseline_submit/script.py"
@@ -51,8 +54,22 @@ if command_members:
     assert len(command_members) == 2
     assert float(bundle["catboost_command_weight"]) == 0.50
     command_cols = bundle["catboost_command_feature_cols"]
-    command_train = add_season_command_features(
-        X, bundle["season_command_lookup"], bundle["prior"], bundle["k"])
+    if bundle.get("era_specs"):
+        raw_features = [c for c in test.columns if c != "row_id"]
+        base = pd.concat([test[raw_features], add_derived(test)], axis=1)
+        sh = add_shrinkage(base, bundle["prior"], bundle["k"])
+        current = pd.concat([base, sh], axis=1)
+        success = add_season_success_features(
+            current, bundle["season_success_lookup"], bundle["prior"], bundle["k"])
+        command = add_season_command_features(
+            current, bundle["season_command_lookup"], bundle["prior"], bundle["k"])
+        era = add_era_features(test, bundle["era_specs"], bundle["k"])
+        current = pd.concat([current, success, command, era], axis=1)
+        command_train = add_regime_current_features(
+            current, bundle["era_specs"], bundle["k"])
+    else:
+        command_train = add_season_command_features(
+            X, bundle["season_command_lookup"], bundle["prior"], bundle["k"])
     assert np.allclose(X[command_cols[-12:]].to_numpy(float),
                        command_train[command_cols[-12:]].to_numpy(float),
                        equal_nan=True), "command 학습/제출 피처 불일치"

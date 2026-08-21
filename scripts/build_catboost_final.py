@@ -1,7 +1,7 @@
-"""검증된 CatBoost categorical expert 2개를 현재 v8 번들에 추가한다.
+"""CatBoost categorical expert 2개를 base 번들에 추가한다.
 
-기존 HGB8/current-season LGBM3는 재학습하지 않고 보존한다. 전체 2019~2024로
-CatBoost 2시드를 학습한 뒤 v8 40% + CatBoost 60%를 혼합하고, 혼합된 2024
+기존 HGB8/current-season LGBM3는 재학습하지 않고 보존한다. v13에서는 같은 공통
+regime 피처를 사용해 CatBoost 2시드를 학습한다. base 40% + CatBoost 60%를 혼합하고,
 학습 예측으로 production과 동일한 recenter_f=0.5 logit shift를 다시 고정한다.
 """
 import os
@@ -15,6 +15,8 @@ from catboost import CatBoostClassifier
 from pipeline import (ID, TARGET, CAT_COLS, DERIVED_COLS, add_derived,
                       add_shrinkage, shrinkage_cols,
                       add_season_success_train_features, season_success_cols,
+                      add_era_features, add_regime_current_features,
+                      regime_season_success_cols,
                       CATBOOST_CAT_COLS as CAT_EXPERT_COLS,
                       add_catboost_context as add_cat_context)
 
@@ -72,16 +74,32 @@ def main():
     base_df = pd.concat([raw[raw_features], add_derived(raw)], axis=1)
     sh = add_shrinkage(base_df, bundle["prior"], bundle["k"])
     Xbase = pd.concat([base_df, sh], axis=1)
+    if bundle.get("era_specs"):
+        Xbase = pd.concat([
+            Xbase, add_era_features(raw, bundle["era_specs"], bundle["k"])
+        ], axis=1)
     train_for_season = pd.concat([Xbase, y.rename(TARGET)], axis=1)
     season = add_season_success_train_features(
         train_for_season, bundle["prior"], bundle["k"])
     Xbase = pd.concat([Xbase, season], axis=1)
+    if bundle.get("era_specs"):
+        Xbase = pd.concat([
+            Xbase, add_regime_current_features(
+                Xbase, bundle["era_specs"], bundle["k"])
+        ], axis=1)
 
     raw_num = [c for c in raw_features if c not in CAT_COLS]
     numeric_ids = {"pitcher_id", "batter_id", "pitcher_team_id", "batter_team_id"}
-    expert_base_num = [c for c in raw_num if c not in numeric_ids]
-    expert_base_num += list(DERIVED_COLS) + shrinkage_cols()
-    expert_features = CAT_EXPERT_COLS + expert_base_num + season_success_cols()
+    if bundle.get("era_specs"):
+        expert_base_num = [
+            c for c in bundle["member_num_cols"][0] if c not in numeric_ids
+        ]
+        season_features = regime_season_success_cols()
+    else:
+        expert_base_num = [c for c in raw_num if c not in numeric_ids]
+        expert_base_num += list(DERIVED_COLS) + shrinkage_cols()
+        season_features = season_success_cols()
+    expert_features = CAT_EXPERT_COLS + expert_base_num + season_features
     Xcat = pd.concat([Xbase, add_cat_context(raw)], axis=1)
     log(f"CatBoost full train rows={len(raw):,} features={len(expert_features)}")
 
@@ -121,7 +139,9 @@ def main():
     bundle["catboost_cat_cols"] = list(CAT_EXPERT_COLS)
     bundle["catboost_weight"] = CATBOOST_WEIGHT
     bundle["logit_shift"] = shift
-    bundle["meta"] = dict(meta, version="v9_catboost_expert",
+    bundle["meta"] = dict(meta, version=("v13_shared_regime_catboost"
+                                         if meta.get("shared_regime")
+                                         else "v9_catboost_expert"),
                            n_catboost=len(catboost_members),
                            catboost_weight=CATBOOST_WEIGHT,
                            p_last_mean=natural,

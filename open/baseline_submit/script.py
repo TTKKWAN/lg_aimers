@@ -38,6 +38,11 @@ PREV_SPECS = [
     ("asof_pitcher_prev5_game_middle_rate", 125, "asof_pitcher_middle_rate"),
 ]
 ERA_SKILL_COLS = [f"era_skill_{rate}" for rate, _ in RATE_N_PAIRS]
+ERA_RECENT_SKILL_COLS = [f"era_skill_{c}" for c, _, _ in PREV_SPECS]
+ERA_GAP_COLS = [
+    "era_pitcher_command_gap", "era_pitcher_recent_trend",
+    "era_batter_pitcher_gap",
+]
 PRESSURE_ABILITY_COLS = [
     "pa_full_x_success_skill", "pa_full_x_ball_skill",
     "pa_three_ball_x_ball_skill", "pa_risp_x_success_skill",
@@ -173,7 +178,7 @@ def expected_era_rate(seasons, spec):
 
 
 def add_era_features(df, era_specs, k):
-    """번들에 고정된 학습 시즌 통계만으로 시대보정 상대능력을 계산한다."""
+    """번들에 고정된 시즌 중심만으로 공통 regime 상대능력을 계산한다."""
     out = {}
     for rate, ncol in RATE_N_PAIRS:
         r = df[rate].to_numpy(dtype=float)
@@ -182,6 +187,45 @@ def add_era_features(df, era_specs, k):
         rf = np.where(np.isnan(r), era, r)
         nf = np.where(np.isnan(r), 0.0, n)
         out[f"era_skill_{rate}"] = (nf / (nf + k)) * (rf - era)
+    for col, pseudo_n, base_rate in PREV_SPECS:
+        r = df[col].to_numpy(dtype=float)
+        era = expected_era_rate(df["season"].to_numpy(), era_specs[base_rate])
+        valid = np.isfinite(r)
+        out[f"era_skill_{col}"] = np.where(
+            valid, (pseudo_n / (pseudo_n + k)) * (r - era), 0.0)
+    out["era_pitcher_command_gap"] = (
+        out["era_skill_asof_pitcher_success_rate"]
+        - out["era_skill_asof_pitcher_middle_rate"])
+    out["era_pitcher_recent_trend"] = (
+        out["era_skill_asof_pitcher_prev1_game_success_rate"]
+        - out["era_skill_asof_pitcher_prev5_game_success_rate"])
+    out["era_batter_pitcher_gap"] = (
+        out["era_skill_asof_batter_success_rate"]
+        - out["era_skill_asof_pitcher_success_rate"])
+    return pd.DataFrame(out, index=df.index)
+
+
+def add_regime_current_features(df, era_specs, k):
+    """현 시즌 success/command를 해당 시즌 중심 대비 상대값으로 변환한다."""
+    out = {}
+    rates = ["asof_pitcher_success_rate", "asof_batter_success_rate"] + \
+            SEASON_COMMAND_RATES
+    seasons = df["season"].to_numpy()
+    for rate in rates:
+        raw_col = f"std_{rate}"
+        if raw_col not in df:
+            continue
+        group = "batter" if rate.startswith("asof_batter") else "pitcher"
+        n = df[f"std_{group}_n"].to_numpy(dtype=float)
+        raw = df[raw_col].to_numpy(dtype=float)
+        era = expected_era_rate(seasons, era_specs[rate])
+        rel = n / (n + k)
+        skill = raw - era
+        sh_skill = rel * skill
+        out[f"era_std_{rate}"] = skill
+        out[f"era_std_sh_{rate}"] = sh_skill
+        out[f"era_std_dev_{rate}"] = (
+            sh_skill - df[f"era_skill_{rate}"].to_numpy(dtype=float))
     return pd.DataFrame(out, index=df.index)
 
 
@@ -345,6 +389,11 @@ def build_features(df, bundle):
         parts.append(add_target_encoding(df, bundle["te_maps"]))
     if bundle.get("era_specs"):
         parts.append(add_era_features(df, bundle["era_specs"], bundle["k"]))
+        current = pd.concat(parts, axis=1)
+        regime_current = add_regime_current_features(
+            current, bundle["era_specs"], bundle["k"])
+        if len(regime_current.columns):
+            parts.append(regime_current)
     if bundle.get("catboost_members"):
         parts.append(add_catboost_context(df))
     if bundle.get("abs_regime_centers"):

@@ -1,0 +1,120 @@
+{
+  "rows": 1475092,
+  "seasons": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "abs_season": 2024,
+  "adversarial_auc": {
+    "all_no_ids_no_season": 0.9970131079679999,
+    "sensitive_only": 0.962954567552,
+    "stable_only": 0.929686966656,
+    "uncertain_only": 0.881186633216
+  },
+  "pitcher_season_cluster_k": 2,
+  "pitcher_season_silhouette": 0.20371358203933476,
+  "pitcher_month_cluster_k": 2,
+  "pitcher_month_silhouette": 0.164937716921533,
+  "top_change_points": [
+    {
+      "feature": "asof_pitcher_reverse_rate",
+      "change_season": 2021,
+      "change_month": 4,
+      "sse_gain": 0.01607636072760496,
+      "relative_sse_gain": 0.8707003845339724,
+      "left_mean": 0.18769457093668532,
+      "right_mean": 0.22895797781266142
+    },
+    {
+      "feature": "asof_batter_success_rate",
+      "change_season": 2023,
+      "change_month": 4,
+      "sse_gain": 0.007530262183743375,
+      "relative_sse_gain": 0.7229099745286276,
+      "left_mean": 0.5491218229962254,
+      "right_mean": 0.5213557391158884
+    },
+    {
+      "feature": "asof_batter_middle_rate",
+      "change_season": 2020,
+      "change_month": 7,
+      "sse_gain": 0.002778716539304727,
+      "relative_sse_gain": 0.7182604835256048,
+      "left_mean": 0.12575155796854345,
+      "right_mean": 0.14477983128549354
+    },
+    {
+      "feature": "asof_pitcher_prev3_game_success_rate",
+      "change_season": 2022,
+      "change_month": 8,
+      "sse_gain": 0.015458309301357475,
+      "relative_sse_gain": 0.6770944679304479,
+      "left_mean": 0.539951328284307,
+      "right_mean": 0.5015179140040115
+    },
+    {
+      "feature": "asof_pitcher_prev5_game_success_rate",
+      "change_season": 2022,
+      "change_month": 8,
+      "sse_gain": 0.014451187532614141,
+      "relative_sse_gain": 0.6757388717626953,
+      "left_mean": 0.5402374609012804,
+      "right_mean": 0.5030771157317794
+    },
+    {
+      "feature": "asof_pitcher_prev1_game_success_rate",
+      "change_season": 2022,
+      "change_month": 7,
+      "sse_gain": 0.017572603890094872,
+      "relative_sse_gain": 0.668159876318394,
+      "left_mean": 0.5416609084037033,
+      "right_mean": 0.5009538363190359
+    },
+    {
+      "feature": "asof_pitcher_middle_rate",
+      "change_season": 2020,
+      "change_month": 6,
+      "sse_gain": 0.0030174544004310695,
+      "relative_sse_gain": 0.6519671909443515,
+      "left_mean": 0.12508619180254701,
+      "right_mean": 0.1456779709873386
+    },
+    {
+      "feature": "asof_pitcher_success_rate",
+      "change_season": 2021,
+      "change_month": 8,
+      "sse_gain": 0.007211763124700919,
+      "relative_sse_gain": 0.6495623278232877,
+      "left_mean": 0.5505965672649111,
+      "right_mean": 0.5243453952545825
+    },
+    {
+      "feature": "control_success",
+      "change_season": 2022,
+      "change_month": 7,
+      "sse_gain": 0.023784478761077598,
+      "relative_sse_gain": 0.6377195370393611,
+      "left_mean": 0.5462342100754908,
+      "right_mean": 0.4988756351390139
+    },
+    {
+      "feature": "asof_pitcher_prev3_game_middle_rate",
+      "change_season": 2024,
+      "change_month": 3,
+      "sse_gain": 0.005542827412088924,
+      "relative_sse_gain": 0.5677652660775019,
+      "left_mean": 0.14383457593854596,
+      "right_mean": 0.17301024943547433
+    }
+  ],
+  "routing_counts": {
+    "stable_backbone_candidate": 28,
+    "abs_expert_only_candidate": 13,
+    "ablation_required": 3
+  },
+  "nan_diagnostics_included": false
+}

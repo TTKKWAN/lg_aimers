@@ -1,0 +1,45 @@
+feature,candidate_route,reason,psi,standardized_delta,adversarial_gain_share
+asof_pitcher_offspeed_rate,ablation_required,pitch-mix may reflect adaptation,0.03842041434947165,-0.024999238098058565,0.03468708428162417
+asof_pitcher_fastball_rate,ablation_required,pitch-mix may reflect adaptation,0.02695028926687876,-0.03910936903700272,0.026347542867188406
+asof_pitcher_breaking_rate,ablation_required,pitch-mix may reflect adaptation,0.024280422276811257,0.05973168452152059,0.02354433097451232
+asof_batter_success_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.7936249792459263,-0.5852691293532988,0.14624740069724065
+asof_batter_middle_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.6596082857907968,0.5499082920214897,0.10506234869815773
+asof_pitcher_middle_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.40818353526899104,0.5390269241783653,0.045560585723852756
+asof_pitcher_reverse_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.3288226141877164,0.46892654491209873,0.03806319067381077
+asof_pitcher_prev5_game_middle_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.4148505614386889,0.592817599855601,0.02986417648434205
+asof_pitcher_success_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.30306171505576696,-0.4932827216796082,0.024163377916875874
+asof_pitcher_strike_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.05325574845175844,0.0729859149751443,0.021427280377370284
+asof_pitcher_ball_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.04416102185909703,0.01120682334550637,0.01898011409318727
+asof_pitcher_prev5_game_success_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.29959240750600186,-0.5337978916083769,0.011660871774396769
+asof_pitcher_prev3_game_success_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.24568691408791798,-0.4770017089799829,0.009190689226228267
+asof_pitcher_prev1_game_success_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.11966436355106741,-0.3191579056978428,0.0034416754877911473
+asof_pitcher_prev3_game_middle_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.31745042795237643,0.5222585329132372,0.003378692818549476
+asof_pitcher_prev1_game_middle_rate,abs_expert_only_candidate,ABS-sensitive rate family,0.14033626065469762,0.3243956898650471,0.0008982601756163584
+asof_batter_n,stable_backbone_candidate,pre-pitch context/workload,,,0.13476361056698127
+batter_team_id,stable_backbone_candidate,pre-pitch context/workload,,,0.08074149546303615
+asof_pitcher_n,stable_backbone_candidate,pre-pitch context/workload,,,0.07214625743411432
+game_month,stable_backbone_candidate,pre-pitch context/workload,,,0.06058933514218499
+game_type,stable_backbone_candidate,pre-pitch context/workload,,,0.042378218959132144
+pitcher_team_id,stable_backbone_candidate,pre-pitch context/workload,,,0.029069276792882345
+asof_pitcher_pitchmix_n,stable_backbone_candidate,pre-pitch context/workload,,,0.009538757586800534
+batter_hand,stable_backbone_candidate,pre-pitch context/workload,,,0.008312110648211414
+run_total_before,stable_backbone_candidate,pre-pitch context/workload,,,0.00610954671894232
+inning,stable_backbone_candidate,pre-pitch context/workload,,,0.00509588534158296
+pitcher_hand,stable_backbone_candidate,pre-pitch context/workload,,,0.004049945081400274
+run_bot_before,stable_backbone_candidate,pre-pitch context/workload,,,0.001610277345281516
+game_dayofweek,stable_backbone_candidate,pre-pitch context/workload,,,0.001014526061084419
+run_top_before,stable_backbone_candidate,pre-pitch context/workload,,,0.0008838102729467657
+score_diff_pitcher_team,stable_backbone_candidate,pre-pitch context/workload,,,0.00045930438482583353
+li,stable_backbone_candidate,pre-pitch context/workload,,,0.0004098955418179987
+home_win_expectancy,stable_backbone_candidate,pre-pitch context/workload,,,0.00011740187059466104
+score_diff_home,stable_backbone_candidate,pre-pitch context/workload,,,7.953448019580313e-05
+away_win_expectancy,stable_backbone_candidate,pre-pitch context/workload,,,5.9818843074036915e-05
+top_bottom,stable_backbone_candidate,pre-pitch context/workload,,,5.336919416594936e-05
+balls_before,stable_backbone_candidate,pre-pitch context/workload,,,0.0
+strikes_before,stable_backbone_candidate,pre-pitch context/workload,,,0.0
+outs_before,stable_backbone_candidate,pre-pitch context/workload,,,0.0
+runner_on_1b,stable_backbone_candidate,pre-pitch context/workload,,,0.0
+runner_on_2b,stable_backbone_candidate,pre-pitch context/workload,,,0.0
+runner_on_3b,stable_backbone_candidate,pre-pitch context/workload,,,0.0
+num_runners_on,stable_backbone_candidate,pre-pitch context/workload,,,0.0
+base_state,stable_backbone_candidate,pre-pitch context/workload,,,0.0

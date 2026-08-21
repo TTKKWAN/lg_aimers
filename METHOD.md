@@ -1,7 +1,7 @@
-# 현재 방법론 — v12 투수별 chase policy
+# v12 기준 방법론 — 투수별 chase policy
 
-이 문서는 현재 루트 `submit.zip`이 사용하는 입력, 가공, 모델, 혼합 및 보정 계약만
-설명한다. 과거 실험 코드는 저장소 공개 대상에서 제외했다.
+이 문서는 비교·복구용 v12의 입력, 가공, 모델, 혼합 및 보정 계약을 설명한다.
+현재 루트 실험 제출물 v13은 `METHOD_V13_CANDIDATE.md`를 기준으로 한다.
 
 ## 0. 전체 구조도
 
@@ -205,6 +205,7 @@ final_probability = sigmoid(logit(raw_prediction_v12) - 0.05087341)
 - 최종 ZIP SHA-256:
   `d455adc05108e56eef1d128904270cecdb60ff933124b17e87cedefb1807e47d`
 
-현재 루트 ZIP은 미제출 v12 후보다. 확인 최고 v11(1018)은
+현재 루트 ZIP은 실전 1038점을 기록한 v13이며, 이 문서의 v12는 실전 미제출
+비교 모델이다. 이전 확인 최고 v11(1018)은
 `backups/submit_v11_1018_backup.zip`, v10(1010)은
 `backups/submit_v10_1010_backup.zip`에 보존돼 있다.
