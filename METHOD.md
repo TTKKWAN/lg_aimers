@@ -1,211 +1,207 @@
-# v12 기준 방법론 — 투수별 chase policy
+# 방법론 — v13 (실전 최고, 리더보드 1038)
 
-이 문서는 비교·복구용 v12의 입력, 가공, 모델, 혼합 및 보정 계약을 설명한다.
-현재 루트 실험 제출물 v13은 `METHOD_V13_CANDIDATE.md`를 기준으로 한다.
+이 문서는 현행 모델의 단일 계약이다. 한 행(투구 하나)의 `control_success=1`
+확률을 어떻게 만드는지, 입력 → 피처 → 모델 → 출력 순으로 적는다.
+번들 버전 이름은 `v13_shared_regime_chase`다.
 
-## 0. 전체 구조도
+## 0. 용어
 
-```mermaid
-flowchart LR
-    A["투구 1행<br/>사전 정보만 사용"] --> B["공통 전처리<br/>원본 + 파생 10개 + fixed EB"]
-
-    T["학습 데이터로 미리 계산<br/>prior · 2024 누적 lookup · 보정 상수"] -. "번들에 고정" .-> B
-    T -.-> C
-    T -.-> G
-    T -.-> D
-
-    B --> H["HGB × 8<br/>공통 91개"]
-    B --> C["현 시즌 복원<br/>투수·타자 16개"]
-    C --> L["LightGBM × 3<br/>공통 + 현 시즌 = 107개"]
-    C --> G["명목형 상황 표현<br/>선수·팀·손·카운트 등 12개"]
-    G --> CB["기존 CatBoost × 2<br/>수치·현 시즌·category = 112개"]
-    C --> D["현 시즌 command 복원<br/>strike·ball·middle·reverse 12개"]
-    G --> CCB["Command CatBoost × 2<br/>기존 입력 + command = 124개"]
-    D --> CCB
-
-    C --> AR["ABS 관측 분해<br/>지표 중심·신뢰 신호·표본오차 20개"]
-    AR --> AB["2024 ABS CatBoost × 2"]
-
-    H --> HM["HGB 평균"]
-    L --> LM["LightGBM 평균"]
-    HM -- "25%" --> BASE["Base ensemble"]
-    LM -- "75%" --> BASE
-
-    BASE -- "40%" --> MIX["Raw prediction"]
-    CB --> CM["기존 CatBoost 평균"]
-    CCB --> CCM["Command CatBoost 평균"]
-    CM -- "50%" --> CF["CatBoost family"]
-    CCM -- "50%" --> CF
-    CF -- "60%" --> MIX
-
-    MIX -- "90%" --> AM["ABS 보조 혼합"]
-    AB -- "10%" --> AM
-    T -.-> P["투수별 2024 chase lookup<br/>다른 투수와 공유 없음"]
-    AM --> P
-    P --> R["Logit 재중심화<br/>shift = -0.05087341"]
-    R --> O["최종 control_success 확률"]
-
-    V["Forward chaining 검증<br/>2022 · 2023 · 2024<br/>다중 seed · paired BSS"] -. "가중치·설정 선택" .-> H
-    V -.-> L
-    V -.-> CB
-
-```
-
-실선은 한 평가 행의 추론 흐름, 점선은 학습 시점에 결정되어 번들에 고정되는 정보와
-검증 절차를 뜻한다. 평가 시점에는 다른 test 행을 참조하지 않는다.
+| 용어 | 뜻 |
+|---|---|
+| `asof_*` | 그 투구 **직전까지** 집계된 공식 사전 정보 컬럼 (누적 투구수 `n`, 누적 비율 `rate`) |
+| EB 축소 | Empirical Bayes shrinkage. 표본 `n`이 작은 비율을 기준값 쪽으로 당기는 것: `(n·rate + k·기준)/(n+k)`, `k=50` |
+| 신뢰도 | `n/(n+k)`. 0~1, 표본이 많을수록 1 |
+| season center | 학습 데이터에서 구한 **그 시즌 리그 평균 rate**. `era_specs`에 시즌별 관측값 + 최근 3시즌 직선 외삽식으로 저장 |
+| regime skill | `신뢰도 × (선수 rate − season center)`. "그 시즌 리그 대비 상대 능력" |
+| 현 시즌 (`std_*`) | 평가 시즌(2025) 안에서만 누적된 값. 누적 `asof`에서 학습 마지막 시즌 종료 endpoint를 뺀 복원값 |
+| ABS | 자동 볼·스트라이크 판정. 2024부터 관측체계가 달라진 구간을 뜻한다 |
+| chase | 2스트라이크 · 논풀카운트 상황 (`strikes_before==2` & `balls_before<3`) |
+| lookup | 학습 시점에 만들어 번들에 고정한 표. 추론 때는 읽기만 한다 |
 
 ## 1. 예측 계약
 
-- 한 행은 투구 하나이며 `control_success=1` 확률을 예측한다.
-- 투구 직전 정보만 사용한다. 현재 투구의 구종·코스·결과·Trackman 값은 사용하지 않는다.
-- test의 다른 행, 전체 분포, 행 순서로 만든 통계는 사용하지 않는다.
-- 추론 피처는 현재 행과 학습 데이터에서 미리 계산해 번들에 고정한 상수·lookup만으로
-  계산한다.
-- 평가는 확률 자체를 비교하는 Brier Skill Score이므로 최종 calibration까지 모델의
-  일부로 취급한다.
+- 입력은 **평가 행 하나 + 번들에 고정된 학습 상수/lookup**뿐이다.
+- 사용 정보는 투구 직전까지 확정된 것만이다.
+- 평가지표가 확률을 직접 보는 Brier Skill Score이므로, 최종 재중심화까지 모델의 일부다.
 
-## 2. 현재 입력 표현
+## 2. 전체 흐름
 
-### 공통 입력과 EB 축소
+```mermaid
+flowchart LR
+    A["투구 1행<br/>asof_* + 상황"] --> B["① 공통 regime 전처리"]
+    T["학습 고정물<br/>prior · era_specs · endpoint lookup<br/>ABS 중심 · chase lookup · logit_shift"] -. 번들 .-> B
 
-원본 경기·카운트·점수·주자·중요도·선수·팀·`asof_*` 컬럼에 행 단위 파생 피처
-10개를 추가한다. 주요 파생값은 full count, RISP, 좌우 매치업, 통산 command gap,
-최근 1경기와 5경기 차이, 접전 여부다.
+    B --> H["HGB × 8<br/>69"]
+    B --> S["② 현 시즌 복원<br/>success 16 + command 12"]
+    S --> L["LightGBM × 3<br/>85"]
+    S --> G["③ 명목형 상황 12"]
+    G --> CB["CatBoost × 2<br/>90"]
+    G --> CC["command CatBoost × 2<br/>102"]
+    S --> AR["④ ABS 관측 분해"]
+    AR --> AB["ABS CatBoost × 2<br/>68"]
 
-누적 비율은 표본 수에 따라 다음과 같이 경험적 베이즈 축소한다.
-
-```text
-shrunk_rate = (n × rate + 50 × train_prior) / (n + 50)
+    H -- 25% --> BASE["base"]
+    L -- 75% --> BASE
+    CB -- 50% --> CF["CatBoost family"]
+    CC -- 50% --> CF
+    BASE -- 40% --> MIX
+    CF -- 60% --> MIX["mix"]
+    MIX -- 75% --> AM
+    AB -- 25% --> AM["v13 raw"]
+    AM --> P["⑤ chase 개인정책<br/>최대 20%"]
+    P --> R["⑥ logit 재중심화<br/>-0.04985414"]
+    R --> O["control_success 확률"]
 ```
 
-최근 1·3·5경기 비율은 리그 평균이 아니라 해당 투수의 축소된 통산 비율 쪽으로
-당긴다. 표본 수의 `log1p(n)`과 `n/(n+50)`도 신뢰도 피처로 사용한다.
+모델 5계열은 **병렬**이다. 서로의 예측을 입력으로 받지 않고 각자 정답을 직접 학습한 뒤,
+확률 수준에서 고정 가중 평균으로 합친다.
 
-### 현 시즌 success/workload
+## 3. 입력 가공
 
-투수와 타자별 2024 시즌 종료 누적 `n`과 성공 횟수를 학습 데이터에서 lookup으로
-고정한다. 평가 행의 누적 `asof_n`, `round(n×success_rate)`에서 이를 빼 2025 현
-시즌 투구 수와 성공률을 복원한다. 신규 선수는 누적 0에서 시작한다.
+### ① 공통 regime 전처리 — v13의 핵심 변경
 
-투수·타자 각각 다음 8개, 총 16개다.
-
-- 과거 lookup 존재 여부와 잘못된 누적 감소 여부
-- 현 시즌 `n`, `log1p(n)`, 신뢰도
-- 현 시즌 raw 성공률과 EB 성공률
-- 현 시즌 EB 성공률과 통산 EB 성공률의 차이
-
-### 현 시즌 command profile
-
-투수별 이전 시즌 종료 누적값을 학습 데이터 lookup으로 고정한 뒤, 현재 행의
-`asof_pitcher_n × rate`에서 빼 현 시즌 strike·ball·middle·reverse 비율을 복원한다.
-각 outcome마다 raw 비율, EB 비율, 통산 EB 대비 편차 3개씩 총 12개다. 현재 투구의
-세부 outcome은 알 수 없으므로 이전 endpoint의 마지막 투구는 success와 달리 +1로
-복원하지 않는다. 계산은 현재 평가 행 하나와 고정 lookup만 사용한다.
-
-### CatBoost 명목형 선수·상황
-
-`pitcher_id`, `batter_id`, 팀 ID는 숫자 크기에 의미를 두지 않고 문자열 category
-lookup key로만 사용한다. 다음 12개 범주를 사용한다.
-
-- 투수·타자·양 팀 ID
-- 투수·타자 손
-- 초/말, 경기 유형, 주자 상태
-- 볼-스트라이크 count state
-- full count·RISP·high LI·접전을 묶은 pressure state
-- 이닝 구간
-
-CatBoost는 최대 2차 category 조합과 ordered target statistics를 학습한다. 학습된
-통계는 모델 안에 고정되며 추론 중 test 행끼리 통계를 계산하지 않는다.
-
-### ABS 관측체계 분해
-
-ABS 전용 expert는 오염된 통산 rate를 버리고 현재시즌 누적과 최근경기 정보만 쓴다.
-success/strike/ball/middle/reverse 및 타자 success를 2024년 5~9월 학습 데이터의
-중앙값·IQR에 대한 상대 위치, `n/(n+50)`을 곱한 신뢰 신호, Bernoulli 표준오차로
-나눠 입력한다. 초기 적응 구간은 삭제하지 않고 3월 0.20, 4월 0.45, 이후 1.0의
-학습 가중치를 사용한다. 외부 ABS 수치나 평가 데이터 분포는 입력하지 않는다.
-
-### 투수별 chase 개인 정책
-
-2스트라이크·비풀카운트에서만 2024의 같은 투수 성공률을 사용한다. 투수별 chase
-성공률은 그 투수 자신의 2024 전체 성공률로 `k=100` 축소하며, 다른 투수 평균·유사도·
-embedding은 쓰지 않는다. 현재 행의 누적값에서 2024 종료 endpoint를 빼 2025 같은
-투수의 전체 성공률 변화를 복원하고 `k=50`으로 축소한다. 과거 전체 표본, chase 표본,
-현재시즌 표본의 신뢰도를 기하평균해 최대 20%만 혼합한다. 신규·미관측 투수와 잘못된
-누적은 가중치 0으로 v11 예측에 그대로 복귀한다.
-
-## 3. 현재 모델과 혼합
-
-| 계열 | 멤버 | 입력 | 계열 내부 평균 |
-|---|---:|---|---:|
-| HistGradientBoosting | 8 | 공통 fixed-EB 91개 | HGB 평균 |
-| LightGBM | 3 | 공통 91개 + 현 시즌 16개 = 107개 | LGBM 평균 |
-| CatBoost | 2 | 수치·현 시즌 + 명목형 category, 총 112개 | 기존 평균 |
-| Command CatBoost | 2 | 기존 CatBoost 입력 + command 12개, 총 124개 | command 평균 |
-| ABS Regime CatBoost | 2 | 현재시즌·최근경기·관측분해, 총 68개 | ABS 평균 |
-
-먼저 HGB와 LightGBM을 다음처럼 합친다.
+v13은 **모든 모델 앞에서** 장기 rate를 상대 축으로 바꾼다. 스트라이크 존과 판정
+체계가 시즌마다 달라지므로, 절대 비율 0.52는 시즌에 따라 다른 뜻을 갖는다.
 
 ```text
-base = 0.25 × mean(HGB8) + 0.75 × mean(LGBM3)
+era_specs[rate]      = 시즌별 관측 평균 + 최근 3시즌 직선 외삽식   (학습 시점 고정)
+season_center        = era_specs로 그 행의 season 하나만 계산
+regime_skill         = n/(n+50) × (rate − season_center)
 ```
 
-그다음 CatBoost expert와 혼합한다.
+- 대상: 누적 rate 10개(투수 success/strike/ball/middle/reverse, 타자 success/middle,
+  구종 fastball/breaking/offspeed) + 최근 1·3·5경기 rate 6개.
+- 파생 3개(`command_gap`, `recent_trend`, `batter_pitcher_gap`)도 변환된 값으로 다시 만든다.
+- 공통 입력에서는 대응하는 **절대 rate와 절대 EB rate 자리를 이 상대값이 대신한다.**
+- 표본 크기 자체(`log1p(n)`, `n/(n+50)`)와 상황 컬럼(이닝·카운트·주자·점수차·LI·손·팀)은
+  절대값 그대로 남는다.
+- 정답 라벨 `control_success`는 그대로 둔다.
+
+### ② 현 시즌(2025) 복원 — success 16 + command 12
+
+평가 시즌 정보는 누적값 안에 섞여 들어온다. 학습 데이터에서 **투수·타자별 마지막
+시즌 종료 endpoint**(`end_n`, `end_count`)를 lookup으로 고정하고, 행의 누적에서 뺀다.
 
 ```text
-catboost_family = 0.50 × mean(CatBoost2) + 0.50 × mean(CommandCatBoost2)
-raw_prediction = 0.40 × base + 0.60 × catboost_family
+current_n    = asof_n − end_n
+current_cnt  = round(asof_n × asof_rate) − end_count
+current_rate = current_cnt / current_n
 ```
 
-마지막으로 ABS 전용 expert를 보수적으로 섞는다.
+여기에도 같은 regime 변환을 적용한다.
 
 ```text
-raw_prediction_v11 = 0.90 × raw_prediction + 0.10 × mean(ABSExpert2)
+current_skill        = current_rate − season_center
+current_shrunk_skill = current_n/(current_n+50) × current_skill
+current_deviation    = current_shrunk_skill − career_regime_skill
 ```
 
-마지막으로 해당 행이 chase 상황일 때만 개인 정책을 적용한다.
+- **success 블록(투수·타자 8개씩 = 16)**: lookup 존재 여부, 누적 감소 이상치 플래그,
+  현 시즌 `n`·`log1p(n)`·신뢰도, 그리고 위 skill 3개.
+- **command 블록(strike/ball/middle/reverse × 3 = 12)**: 같은 방식. 현재 투구의 세부
+  판정은 미확정이므로 success와 달리 마지막 투구를 +1로 복원하지 않는다.
+- 신규 선수는 누적 0에서 시작하고, 이상치는 플래그로 표시해 모델이 판단한다.
+
+### ③ CatBoost 명목형 상황 12개
+
+ID를 숫자 크기로 읽지 않도록 문자열 category key로만 쓴다: 투수·타자·양 팀 ID,
+투수·타자 손, 초/말, 경기 유형, 주자 상태, 카운트 상태(`3_2` 식),
+pressure 상태(full count·RISP·high LI·접전 조합), 이닝 구간(early/middle/late/extra).
+CatBoost가 최대 2차 조합(`max_ctr_complexity=2`)과 ordered target statistics를 학습해
+모델 안에 굳힌다.
+
+### ④ ABS 관측 분해 — ABS expert 전용 입력
+
+ABS expert는 시즌이 섞인 통산 rate 대신 **현 시즌 + 최근 경기 정보**만 본다.
+투수 success/strike/ball/middle/reverse와 타자 success를, **2024년 5~9월(성숙 구간)
+학습 데이터의 중앙값·IQR**을 기준으로 셋으로 쪼갠다.
 
 ```text
-personal = logit⁻¹(logit(chase_2024) + logit(success_2025) - logit(success_2024))
-reliability = √[n2024/(n2024+200) × nchase/(nchase+100) × n2025/(n2025+50)]
-raw_prediction_v12 = (1 - 0.20×reliability) × raw_prediction_v11
-                     + (0.20×reliability) × personal
+abs_centered = (현시즌 EB rate − center) / IQR        측정 축 위의 위치
+abs_signal   = 신뢰도 × abs_centered                  표본으로 뒷받침된 신호
+abs_noise    = sqrt(rate(1−rate)/n)                   그 값의 표본오차
 ```
 
-CatBoost는 seed 2026/2718, 350 trees, depth 7, learning rate 0.05,
-`max_ctr_complexity=2`를 사용한다.
+여기에 command 종합 2개(`middle+reverse+ball−strike`의 centered·signal 버전)를 더한다.
+학습은 2024년만 쓰고, 적응 구간에 낮은 학습 가중치를 준다: 3월 0.20, 4월 0.45, 5월 이후 1.0.
 
-## 4. 재중심화
+## 4. 모델 구성
 
-최근 3개 학습 시즌의 성공률 추세로 다음 시즌 리그 평균을 학습 시점에 외삽한다.
-최종 혼합 모델의 2024 자연평균과 외삽값 사이 절반 지점을 목표로 한다.
+| 계열 | 개수 | 입력 | 하이퍼 |
+|---|---:|---|---|
+| HistGradientBoosting | 8 | 공통 regime 69 | 이질 조합 (lr 0.02~0.06, leaves 31~127, seed 8종) |
+| LightGBM | 3 | 69 + 현시즌 success 16 = 85 | lr 0.02/0.03/0.05, leaves 127/63/31 |
+| CatBoost | 2 | 명목형 12 + 수치 + 현시즌 = 90 | 350 trees, depth 7, lr 0.05, l2 10, seed 2026/2718 |
+| command CatBoost | 2 | 위 90 + command 12 = 102 | 동일, seed 2026/2718 |
+| ABS CatBoost | 2 | ABS 분해 68 (2024만 학습) | 350 trees, depth 7, lr 0.05, l2 15, seed 4242/5151 |
+
+**HGB vs LightGBM**: HGB는 안정된 공통 입력만, LightGBM은 현 시즌 신호까지 본다.
+**CatBoost 2쌍**: 선수·상황 ID 조합을 잡는 것이 역할이고, command 버전은 거기에
+"이 투수가 올해 어디로 던지고 있는지"를 더한 것이다.
+**ABS expert**: 관측체계가 바뀐 최신 구간만 학습한 소수 의견이다.
+
+## 5. 혼합과 출력
+
+순서대로 확률을 섞는다. 모든 가중치는 학습 시점에 고정된 상수다.
 
 ```text
-recenter_f = 0.5
-2024 mixed natural mean = 0.48732353
-target mean = 0.47475110
-logit_shift = -0.05087341
+base    = 0.25 × mean(HGB8)      + 0.75 × mean(LGBM3)
+catfam  = 0.50 × mean(CatBoost2) + 0.50 × mean(CommandCatBoost2)
+mix     = 0.40 × base            + 0.60 × catfam
+raw     = 0.75 × mix             + 0.25 × mean(ABSExpert2)
 ```
 
-추론에서는 각 행에 독립적으로 다음 변환만 적용한다.
+### ⑤ chase 개인 정책 (해당 행에만, 최대 20%)
+
+2스트라이크·논풀카운트 행에서만 **그 투수 자신의** 최신 학습 시즌 chase 성향을 쓴다.
+다른 투수의 평균·유사도·embedding은 개입하지 않는다.
 
 ```text
-final_probability = sigmoid(logit(raw_prediction_v12) - 0.05087341)
+chase_rate  = (chase 성공 + 100 × 그 투수 시즌 전체 성공률) / (chase 투구수 + 100)
+personal    = sigmoid( logit(chase_rate) + logit(현시즌 성공률) − logit(과거 전체 성공률) )
+reliability = sqrt[ n_hist/(n_hist+200) × n_chase/(n_chase+100) × n_cur/(n_cur+50) ]
+p           = (1 − 0.20×reliability) × raw + (0.20×reliability) × personal
 ```
 
-## 5. 학습·검증·제출 계약
+세 표본 중 하나라도 얇으면 `reliability`가 작아져 원래 예측이 거의 그대로 남고,
+미관측 투수·이상 누적은 가중치 0으로 원래 예측을 쓴다.
 
-- 모델 비교: 과거 시즌 학습 → 2022/2023/2024 검증의 forward chaining
-- 판단: 다중 시드 평균, paired BSS gain과 표준오차, 세 시즌 방향 일관성
-- 학습 피처 기준: `scripts/pipeline.py`
-- 제출 피처 복제: `open/baseline_submit/script.py`
-- 최종 번들: HGB8 + LightGBM3 + CatBoost2 + Command CatBoost2 + ABS CatBoost2, 52.5MB
-- 의존성: scikit-learn 1.8.0, LightGBM 4.7.0, CatBoost 1.2.8
-- 245,789행 모사 피처 생성+추론: 107.66초
-- 최종 ZIP SHA-256:
-  `d455adc05108e56eef1d128904270cecdb60ff933124b17e87cedefb1807e47d`
+### ⑥ 재중심화 → 최종 출력
 
-현재 루트 ZIP은 실전 1038점을 기록한 v13이며, 이 문서의 v12는 실전 미제출
-비교 모델이다. 이전 확인 최고 v11(1018)은
-`backups/submit_v11_1018_backup.zip`, v10(1010)은
-`backups/submit_v10_1010_backup.zip`에 보존돼 있다.
+리그 성공률이 해마다 움직이므로, 최근 3시즌 추세로 평가 시즌 평균을 외삽하고
+모델의 2024 자연 평균과 그 값의 **중간 지점**(`recenter_f=0.5`)을 목표로 로짓을 평행이동한다.
+상수는 학습 시점에 이분탐색으로 한 번 구해 번들에 넣는다.
+
+```text
+logit_shift      = -0.04985414
+final_prob = sigmoid( logit(p) − 0.04985414 )
+```
+
+출력은 행별 확률 하나이며, `output/submission.csv`의 `row_id, control_success`로 나간다.
+각 행은 독립 계산이라 평가 데이터의 다른 행이나 전체 분포가 개입할 여지가 없다.
+
+## 6. 재현 순서
+
+```bash
+python3 scripts/build_final.py 50 te0 8 0.5 3 era1 context0 season1 0.75
+python3 scripts/build_catboost_final.py
+python3 scripts/build_catboost_command_final.py
+cp open/baseline_submit/model/bundle_v13_command_candidate.pkl open/baseline_submit/model/bundle.pkl
+python3 scripts/build_abs_regime_final.py
+cp open/baseline_submit/model/bundle_v13_abs_candidate.pkl open/baseline_submit/model/bundle.pkl
+python3 scripts/build_pitcher_policy_final.py   # -> bundle_v13_shared_regime_candidate.pkl
+```
+
+학습·재학습은 Colab에서 돌린다(`CLAUDE.md` §6). 번들에는 모델과 함께 prior, `era_specs`,
+endpoint lookup, ABS 중심, chase lookup, 피처 순서, 혼합 가중치, `logit_shift`가 함께 들어간다.
+
+## 7. 검증과 성과
+
+- 학습 피처 기준은 `scripts/pipeline.py`, 제출 추론은 `open/baseline_submit/script.py`이며
+  두 경로의 값·컬럼 순서 동등성을 `test_submission_path.py`, `test_shared_regime_path.py`,
+  `test_catboost_submission_path.py`, `test_pitcher_policy_submission_path.py`로 확인한다.
+- 모델 비교는 과거 시즌 학습 → 2022/2023/2024 검증의 forward chaining, 다중 시드 평균,
+  paired BSS와 표준오차, 세 시즌 방향 일관성으로 판단한다.
+- 의존성: scikit-learn 1.8.0, LightGBM 4.7.0, CatBoost 1.2.8.
+- 실전 리더보드: **v13 = 1038** (이전 확인 최고 v11 = 1018, v10 = 1010).
+- 이식용 작업본은 코드·기록만 담고, 번들과 `submit.zip`은 새 서버에서 재생성한다.
